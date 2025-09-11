@@ -16,7 +16,7 @@ import { AddExamForm } from "@/components/app/add-exam-form";
 import { getPublishedExams, getExamCategories, type Exam } from "@/services/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteExamAction } from "@/app/admin/actions";
 import { subCategories as subCategoryMap, allCategories } from "@/lib/categories";
 
