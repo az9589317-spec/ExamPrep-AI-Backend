@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { ArrowLeft, MoreHorizontal, PlusCircle, Trash2, BookOpen, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AddQuestionForm } from "@/components/app/add-question-form";
+import { AddQuestionForm, AiBulkUploader } from "@/components/app/add-question-form";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -25,28 +25,39 @@ function SectionQuestions({
     onEdit, 
     onDelete,
     onAdd,
-    isPending
+    isPending,
+    examId,
+    onBulkAddFinished,
 }: { 
     section: Section, 
     questions: Question[], 
     onEdit: (question: Question) => void, 
     onDelete: (questionId: string) => void,
     onAdd: (sectionName: string) => void,
-    isPending: boolean
+    isPending: boolean,
+    examId: string,
+    onBulkAddFinished: () => void,
 }) {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <CardTitle>{section.name}</CardTitle>
                     <CardDescription>{questions.length} questions in this section.</CardDescription>
                 </div>
-                <Button size="sm" className="h-8 gap-1" onClick={() => onAdd(section.name)}>
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      Add Question
-                  </span>
-                </Button>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    <AiBulkUploader
+                        examId={examId}
+                        sectionName={section.name}
+                        onFinished={onBulkAddFinished}
+                    />
+                    <Button size="sm" className="h-9 gap-1" onClick={() => onAdd(section.name)}>
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                          Add Manually
+                      </span>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -283,6 +294,8 @@ export default function ExamQuestionsPage() {
                         onDelete={handleDeleteQuestion}
                         onAdd={openAddDialog}
                         isPending={isPending}
+                        examId={exam.id}
+                        onBulkAddFinished={fetchExamAndQuestions}
                     />
                 )
             })}

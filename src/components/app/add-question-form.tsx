@@ -23,12 +23,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Trash2, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { addQuestionAction, parseQuestionAction } from "@/app/admin/actions";
+import { addQuestionAction, parseQuestionAction, parseAndSaveQuestionsAction } from "@/app/admin/actions";
 import { Separator } from "../ui/separator";
 import type { Exam, Question } from "@/lib/data-structures";
 import { Skeleton } from "../ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { v4 as uuidv4 } from "uuid";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 
 
 const subQuestionSchema = z.object({
@@ -121,6 +122,87 @@ interface AddQuestionFormProps {
     defaultSection?: string;
     onFinished: () => void;
 }
+
+export function AiBulkUploader({
+    examId,
+    sectionName,
+    onFinished,
+}: {
+    examId: string;
+    sectionName: string;
+    onFinished: () => void;
+}) {
+    const { toast } = useToast();
+    const [isParsing, setIsParsing] = useState(false);
+    const [aiInput, setAiInput] = useState("");
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleParseWithAI = async () => {
+        if (!aiInput) {
+            toast({ variant: "destructive", title: "Input Required", description: "Please paste the question text into the AI parser box." });
+            return;
+        }
+        setIsParsing(true);
+        try {
+            const result = await parseAndSaveQuestionsAction({
+                rawQuestionsText: aiInput,
+                examId: examId,
+                subject: sectionName,
+            });
+
+            if (result.success) {
+                toast({ title: "Success!", description: `${result.count} questions were added to the "${sectionName}" section.` });
+                setAiInput("");
+                setIsDialogOpen(false);
+                onFinished(); // This will trigger a re-fetch of questions
+            } else {
+                toast({ variant: 'destructive', title: 'Bulk Import Failed', description: result.error || "Couldn't parse and save the questions." });
+            }
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Error', description: "An unexpected error occurred during bulk import." });
+        } finally {
+            setIsParsing(false);
+        }
+    };
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button size="sm" className="h-9 gap-1 w-full md:w-auto">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Add with AI
+                    </span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Bulk Add Questions with AI</DialogTitle>
+                    <DialogDescription>
+                        Paste up to 30 questions for the <span className="font-bold text-primary">{sectionName}</span> section.
+                        Separate each question with "---" on a new line. The AI will parse and save them all at once.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <Textarea
+                        placeholder={`Question 1...\nAnswer: A\nExplanation: ...\n---\nQuestion 2...\nAnswer: C\nExplanation: ...`}
+                        value={aiInput}
+                        onChange={(e) => setAiInput(e.target.value)}
+                        className="h-64"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button type="button" onClick={handleParseWithAI} disabled={isParsing}>
+                        {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        {isParsing ? 'Parsing & Saving...' : `Parse & Save Questions`}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export function AddQuestionForm({ exam, initialData, defaultSection, onFinished }: AddQuestionFormProps) {
   const { toast } = useToast();
@@ -254,21 +336,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="space-y-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
-            <FormLabel className='text-base'>Parse Question with AI</FormLabel>
-            <Textarea 
-                placeholder="Paste a standard multiple choice question here. The AI will parse it and fill the fields below."
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                className="h-32"
-            />
-            <Button type="button" onClick={handleParseWithAI} disabled={isParsing}>
-                {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Parse with AI
-            </Button>
-        </div>
-        <Separator />
-        
         <FormField
             control={form.control}
             name="questionType"

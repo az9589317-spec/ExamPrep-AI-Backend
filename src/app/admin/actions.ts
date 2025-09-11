@@ -1,5 +1,6 @@
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -8,6 +9,7 @@ import { collection, addDoc, updateDoc, doc, type Timestamp, writeBatch, getDocs
 import { revalidatePath } from 'next/cache';
 import { exams as mockExams, questions as mockQuestions } from '@/lib/mock-data';
 import { parseQuestionFromText } from '@/ai/flows/parse-question-from-text';
+import { parseQuestionsFromText } from '@/ai/flows/parse-questions-from-text';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -472,6 +474,77 @@ export async function parseQuestionAction(text: string) {
         return { success: false, error: errorMessage };
     }
 }
+
+export async function parseAndSaveQuestionsAction({
+    rawQuestionsText,
+    examId,
+    subject,
+}: {
+    rawQuestionsText: string;
+    examId: string;
+    subject: string;
+}) {
+    try {
+        // 1. Call the AI flow to parse the text
+        const parsedResult = await parseQuestionsFromText({ rawQuestionsText });
+        const parsedQuestions = parsedResult.questions;
+
+        if (!parsedQuestions || parsedQuestions.length === 0) {
+            return { success: false, error: 'AI could not find any questions to parse.' };
+        }
+
+        // 2. Iterate and save each question
+        const batch = writeBatch(db);
+        const questionsCollectionRef = collection(db, 'exams', examId, 'questions');
+
+        for (const q of parsedQuestions) {
+            const newQuestionRef = doc(questionsCollectionRef);
+            const questionPayload = {
+                ...q,
+                questionType: 'Standard',
+                subject: subject, // Assign the section subject
+                examId: examId,
+                options: q.options.map(opt => ({ text: opt.text })), // Ensure correct option format
+                createdAt: new Date(),
+            };
+            batch.set(newQuestionRef, questionPayload);
+        }
+
+        await batch.commit();
+
+        // 3. Recalculate totals on the exam document
+        const examRef = doc(db, 'exams', examId);
+        const allQuestionsSnapshot = await getDocs(questionsCollectionRef);
+        
+        let totalMarks = 0;
+        let totalSubQuestions = 0; // This handles RC and standard questions
+        allQuestionsSnapshot.forEach(qDoc => {
+            const qData = qDoc.data();
+            totalMarks += qData.marks || 0;
+            if (qData.questionType === 'Reading Comprehension' && qData.subQuestions) {
+                totalSubQuestions += qData.subQuestions.length;
+            } else {
+                totalSubQuestions++;
+            }
+        });
+
+        await updateDoc(examRef, {
+            totalQuestions: totalSubQuestions,
+            totalMarks: totalMarks,
+            questions: allQuestionsSnapshot.size,
+        });
+        
+        revalidatePath(`/admin/exams/${examId}/questions`);
+
+        return { success: true, count: parsedQuestions.length };
+
+    } catch (error) {
+        console.error('Error in parseAndSaveQuestionsAction:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during bulk import.';
+        return { success: false, error: errorMessage };
+    }
+}
+
 
 export async function deleteUserAction({ userId }: { userId: string }) {
     if (!userId) {
