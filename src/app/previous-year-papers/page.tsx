@@ -11,12 +11,14 @@ import Link from 'next/link';
 import { getPublishedExams, type Exam } from '@/services/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { allCategories } from '@/lib/categories';
+import { allCategories, subCategories as subCategoryMap } from '@/lib/categories';
 
 function AllPreviousYearPapers() {
     const [exams, setExams] = useState<Exam[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [selectedSubCategory, setSelectedSubCategory] = useState<string>('All');
+    const [selectedYear, setSelectedYear] = useState<string>('All');
     
     useEffect(() => {
         async function fetchExams() {
@@ -34,29 +36,70 @@ function AllPreviousYearPapers() {
         fetchExams();
     }, []);
 
+    // Memoize the filtering logic
     const filteredExams = useMemo(() => {
-        if (selectedCategory === 'All') {
-            return exams;
-        }
         return exams.filter(exam => {
-            const categories = Array.isArray(exam.category) ? exam.category : [exam.category];
-            return categories.some(cat => cat.includes(selectedCategory));
-        });
-    }, [exams, selectedCategory]);
+            const examCategories = Array.isArray(exam.category) ? exam.category : [exam.category];
+            
+            // Year filter
+            if (selectedYear !== 'All' && exam.year?.toString() !== selectedYear) {
+                return false;
+            }
 
-    const mainCategoriesWithPYP = useMemo(() => {
-        const categories = new Set<string>();
+            // Main category filter
+            const mainCategoryMatch = selectedCategory === 'All' || examCategories.some(cat => {
+                const parentCat = Object.keys(subCategoryMap).find(parent => subCategoryMap[parent].includes(cat));
+                return parentCat === selectedCategory;
+            });
+            if (!mainCategoryMatch) return false;
+
+            // Sub-category filter
+            const subCategoryMatch = selectedSubCategory === 'All' || examCategories.includes(selectedSubCategory);
+            if (!subCategoryMatch) return false;
+
+            return true;
+        });
+    }, [exams, selectedCategory, selectedSubCategory, selectedYear]);
+
+    // Memoize the calculation of filter options
+    const { mainCategories, subCategories, years } = useMemo(() => {
+        const mainCatSet = new Set<string>();
+        const subCatSet = new Set<string>();
+        const yearSet = new Set<string>();
+        
         exams.forEach(exam => {
             const examCategories = Array.isArray(exam.category) ? exam.category : [exam.category];
+            
             examCategories.forEach(cat => {
-                const mainCat = allCategories.find(main => cat.includes(main.name));
-                if (mainCat) {
-                    categories.add(mainCat.name);
+                if (cat !== 'Previous Year Paper') {
+                    subCatSet.add(cat);
+                    const mainCat = Object.keys(subCategoryMap).find(parent => subCategoryMap[parent].includes(cat));
+                    if (mainCat) mainCatSet.add(mainCat);
                 }
             });
+
+            if (exam.year) {
+                yearSet.add(exam.year.toString());
+            }
         });
-        return Array.from(categories).sort();
+
+        return {
+            mainCategories: Array.from(mainCatSet).sort(),
+            subCategories: Array.from(subCatSet).sort(),
+            years: Array.from(yearSet).sort((a, b) => parseInt(b) - parseInt(a)),
+        };
     }, [exams]);
+    
+     const relevantSubCategories = useMemo(() => {
+        if (selectedCategory === 'All') {
+            return subCategories;
+        }
+        return subCategoryMap[selectedCategory] || [];
+    }, [selectedCategory, subCategories]);
+
+    useEffect(() => {
+        setSelectedSubCategory('All');
+    }, [selectedCategory]);
 
     if (isLoading) {
         return (
@@ -84,15 +127,31 @@ function AllPreviousYearPapers() {
 
     return (
         <>
-            <div className="mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full sm:w-[280px]">
-                        <SelectValue placeholder="Filter by category..." />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Filter by category..." /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="All">All Categories</SelectItem>
-                        {mainCategoriesWithPYP.map(category => (
+                        <SelectItem value="All">All Main Categories</SelectItem>
+                        {mainCategories.map(category => (
                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory} disabled={selectedCategory === 'All'}>
+                    <SelectTrigger><SelectValue placeholder="Filter by sub-category..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Sub-Categories</SelectItem>
+                        {relevantSubCategories.map(sub => (
+                             sub !== 'Previous Year Paper' && <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger><SelectValue placeholder="Filter by year..." /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Years</SelectItem>
+                        {years.map(year => (
+                             <SelectItem key={year} value={year}>{year}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -128,7 +187,7 @@ function AllPreviousYearPapers() {
                 ))}
                 {filteredExams.length === 0 && (
                      <div className="text-center text-muted-foreground py-10">
-                        <p>No papers found for the selected category.</p>
+                        <p>No papers found for the selected filters.</p>
                     </div>
                 )}
             </div>
@@ -160,4 +219,3 @@ export default function PreviousYearPapersPage() {
     </div>
   );
 }
-
