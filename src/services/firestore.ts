@@ -16,21 +16,19 @@ import {
   updateDoc,
   setDoc,
 } from 'firebase/firestore';
-import { allCategories } from '@/lib/categories.tsx';
+import { allCategories, allSubCategories } from '@/lib/categories.tsx';
 import type { Exam, Question, UserProfile, ExamResult } from '@/lib/data-structures';
 import { getQuestionsForExam as getQuestions } from './firestore';
-
-const bankingSubCategories = ['IBPS', 'SBI', 'RBI'];
 
 export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
   let q;
     if (category) {
-        const isBankingSubCategory = bankingSubCategories.includes(category);
-        if (isBankingSubCategory) {
+        const isSubCategory = allSubCategories.includes(category);
+        if (isSubCategory) {
             // This is a sub-category, so query based on exam name prefix.
             // This is a workaround. A better solution is a dedicated 'subCategory' field.
-             q = query(examsCollection, where('category', '==', 'Banking'));
+             q = query(examsCollection, where('category', 'in', ['Banking', 'SSC', 'Railway']));
         } else {
             q = query(examsCollection, where('category', '==', category));
         }
@@ -41,7 +39,7 @@ export async function getExams(category?: string): Promise<Exam[]> {
   const snapshot = await getDocs(q);
   let exams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
 
-  if (category && bankingSubCategories.includes(category)) {
+  if (category && allSubCategories.includes(category)) {
       exams = exams.filter(exam => exam.name.startsWith(category));
   }
   
@@ -55,12 +53,12 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const examsCollection = collection(db, 'exams');
     let q;
     
-    const isBankingSubCategory = category && bankingSubCategories.includes(category);
+    const isSubCategory = category && allSubCategories.includes(category);
 
     if (category) {
-        if (isBankingSubCategory) {
+        if (isSubCategory) {
             // For sub-categories like SBI, IBPS, query the parent "Banking" category
-            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', 'Banking'));
+            q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', ['Banking', 'SSC', 'Railway']));
         } else {
             // For main categories
             q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
@@ -74,7 +72,7 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
     
     // If it was a banking sub-category, filter by name prefix
-    if (isBankingSubCategory) {
+    if (isSubCategory) {
         examsData = examsData.filter(exam => exam.name.startsWith(category));
     }
 
@@ -119,7 +117,7 @@ export async function getExamCategories() {
         acc[exam.category] = (acc[exam.category] || 0) + 1;
 
         // Also add to sub-categories if applicable
-        bankingSubCategories.forEach(sub => {
+        allSubCategories.forEach(sub => {
             if (exam.name.startsWith(sub)) {
                 acc[sub] = (acc[sub] || 0) + 1;
             }
