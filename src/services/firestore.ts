@@ -288,5 +288,3 @@ export async function getCategoryPerformanceStats(category: string) {
         highestScoreExamName: highestScoreResult.examName,
     };
 }
-
-    

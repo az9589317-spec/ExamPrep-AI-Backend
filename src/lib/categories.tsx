@@ -63,12 +63,12 @@ export const allCategories: Category[] = [
 ];
 
 export const subCategories: Record<string, string[]> = {
-    Banking: ['IBPS', 'SBI', 'RBI'],
-    SSC: ['CGL', 'CHSL', 'MTS'],
-    Railway: ['NTPC', 'Group D', 'ALP'],
-    UPSC: ['CSE', 'NDA', 'CDS'],
-    JEE: ['Main', 'Advanced'],
-    NEET: ['UG', 'PG'],
+    Banking: ['IBPS', 'SBI', 'RBI', 'Previous Year Paper'],
+    SSC: ['CGL', 'CHSL', 'MTS', 'Previous Year Paper'],
+    Railway: ['NTPC', 'Group D', 'ALP', 'Previous Year Paper'],
+    UPSC: ['CSE', 'NDA', 'CDS', 'Previous Year Paper'],
+    JEE: ['Main', 'Advanced', 'Previous Year Paper'],
+    NEET: ['UG', 'PG', 'Previous Year Paper'],
 };
 
 export const allSubCategories = Object.values(subCategories).flat();
