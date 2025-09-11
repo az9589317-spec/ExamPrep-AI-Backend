@@ -24,23 +24,40 @@ const prompt = ai.definePrompt({
   input: { schema: ParseQuestionInputSchema },
   output: { schema: ParsedQuestionOutputSchema },
   prompt: `You are an expert system designed to parse unstructured text and convert it into a structured question format.
-Analyze the following text and extract the required fields.
+Analyze the following text and extract the required fields. The user can provide either a standard multiple-choice question or a full passage for a Reading Comprehension (RC) question.
 
-The user will provide a text block that includes:
-1. The question itself.
-2. A list of multiple-choice options. These might be numbered (1, 2, 3, 4), lettered (A, B, C, D), or just listed.
-3. The correct answer. This could be indicated by "Answer: C", "Correct: 2", "Ans: Option A", or similar phrasing. Your task is to determine the correct 0-based index of this answer from the options list you create.
-4. Optional: An explanation for the answer.
-5. Optional: The subject, topic, and difficulty level.
+***INSTRUCTIONS***
 
-Carefully identify each part and structure it into the JSON output format. Ensure the 'correctOptionIndex' is accurate based on the options array you generate.
+1.  **Detect Question Type**: First, determine if the provided text is a standard question or a Reading Comprehension passage.
+    *   If it's a short block with a question, options, and an answer, treat it as a **Standard** question.
+    *   If it's a longer paragraph or article, treat it as a **Reading Comprehension** question.
 
+2.  **For Standard Questions**:
+    *   Extract the 'questionText'.
+    *   Extract the list of multiple-choice 'options'. These might be numbered (1, 2, 3), lettered (A, B, C), or just listed.
+    *   Determine the correct 0-based 'correctOptionIndex' from the indicated answer (e.g., "Answer: C", "Correct: 2").
+    *   Extract 'subject', 'topic', 'difficulty', and 'explanation' if available.
+    *   The 'passage' and 'subQuestions' fields should be null or omitted.
+
+3.  **For Reading Comprehension (RC) Questions**:
+    *   The entire provided text is the 'passage'. Put it in the 'passage' field.
+    *   From the passage, you must **GENERATE 3 to 5 relevant sub-questions**.
+    *   For each sub-question, you must generate:
+        *   'questionText' (the sub-question itself).
+        *   'options' (an array of 4 plausible options).
+        *   'correctOptionIndex' (the 0-based index of the correct option).
+        *   'explanation' for the sub-question's answer.
+        *   'marks' (default to 1).
+    *   The 'questionText' (main) and 'options' (main) fields should be null or omitted for RC types.
+
+Your JSON output must conform to the ParsedQuestionOutput schema.
+
+---
 Raw Text to Parse:
 '''
 {{{rawQuestionText}}}
 '''
-
-Your JSON output should conform to the ParsedQuestionOutput schema.
+---
 `,
 });
 

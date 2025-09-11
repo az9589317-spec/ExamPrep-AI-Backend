@@ -269,30 +269,43 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
     name: "options",
   });
 
-  const { fields: subQuestionFields, append: appendSubQuestion, remove: removeSubQuestion } = useFieldArray({
+  const { fields: subQuestionFields, append: appendSubQuestion, remove: removeSubQuestion, replace: replaceSubQuestions } = useFieldArray({
     control: form.control,
     name: "subQuestions",
   });
   
   const handleParseWithAI = async () => {
     if (!aiInput) {
-        toast({ variant: "destructive", title: "Input Required", description: "Please paste the question text into the AI parser box."});
+        toast({ variant: "destructive", title: "Input Required", description: "Please paste the text into the AI parser box."});
         return;
     }
     setIsParsing(true);
     try {
         const result = await parseQuestionAction(aiInput);
         if (result.success && result.data) {
-            const { questionText, options, correctOptionIndex, subject, topic, difficulty, explanation } = result.data;
-            form.setValue('questionType', 'Standard');
-            form.setValue('questionText', questionText || '');
-            replaceOptions(options.map(opt => ({ text: opt.text || '' })));
-            form.setValue('correctOptionIndex', correctOptionIndex);
-            if (subject) form.setValue('subject', subject);
-            if (topic) form.setValue('topic', topic);
-            if (difficulty) form.setValue('difficulty', difficulty);
-            form.setValue('explanation', explanation || '');
-            toast({ title: "Success", description: "AI has filled the form fields." });
+            const { questionText, options, correctOptionIndex, subject, topic, difficulty, explanation, passage, subQuestions } = result.data as any;
+            
+            if (passage && subQuestions) {
+                form.setValue('questionType', 'Reading Comprehension');
+                form.setValue('passage', passage);
+                replaceSubQuestions(subQuestions.map((sq: any) => ({...sq, id: uuidv4() })));
+                if(subject) form.setValue('subject', subject);
+                if(topic) form.setValue('topic', topic);
+                if(difficulty) form.setValue('difficulty', difficulty);
+                if(explanation) form.setValue('explanation', explanation);
+                toast({ title: "Success", description: "AI has filled the RC form fields." });
+            } else {
+                form.setValue('questionType', 'Standard');
+                form.setValue('questionText', questionText || '');
+                replaceOptions(options.map((opt: any) => ({ text: opt.text || '' })));
+                form.setValue('correctOptionIndex', correctOptionIndex);
+                if (subject) form.setValue('subject', subject);
+                if (topic) form.setValue('topic', topic);
+                if (difficulty) form.setValue('difficulty', difficulty);
+                form.setValue('explanation', explanation || '');
+                toast({ title: "Success", description: "AI has filled the standard form fields." });
+            }
+
         } else {
              toast({ variant: 'destructive', title: 'Parsing Failed', description: result.error || "Couldn't parse the question." });
         }
@@ -353,6 +366,29 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                 </FormItem>
             )}
         />
+        
+        <Card className="bg-muted/30">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> AI Parser</CardTitle>
+                <FormDescription>
+                   {questionType === 'Reading Comprehension' ? 
+                   "Paste a full reading passage. The AI will extract the passage and generate sub-questions automatically." : 
+                   "Paste a single question with its options and answer. The AI will fill out the fields below."}
+                </FormDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                 <Textarea 
+                    placeholder={questionType === 'Reading Comprehension' ? "Paste your passage here..." : "Paste your question here..."}
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    className="bg-background"
+                />
+                <Button type="button" size="sm" onClick={handleParseWithAI} disabled={isParsing}>
+                    {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    {isParsing ? 'Parsing...' : `Generate ${questionType === 'Reading Comprehension' ? 'RC' : 'Standard'} Question`}
+                </Button>
+            </CardContent>
+        </Card>
 
         {questionType === 'Standard' && (
             <Card>
