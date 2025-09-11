@@ -28,7 +28,7 @@ const sectionSchema = z.object({
 const addExamSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.array(z.string()).min(1, 'At least one category is required.'),
+  category: z.string().min(1, 'A category is required.'),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -387,7 +387,6 @@ export async function seedDatabaseAction() {
 
             const examPayload: any = {
                 ...mockExam,
-                category: [mockExam.category], // Convert category to an array
                 sections: [
                     { id: 's1', name: 'Quantitative Aptitude', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
                     { id: 's2', name: 'Reasoning Ability', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },

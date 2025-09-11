@@ -19,10 +19,9 @@ import { useTransition, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { v4 as uuidv4 } from 'uuid';
-import { categoryNames, subCategories as subCategoryMap } from '@/lib/categories';
+import { allCategories, subCategories as subCategoryMap } from '@/lib/categories';
 import type { Exam } from '@/lib/data-structures';
 import { format } from 'date-fns';
-import { MultiSelect } from '../ui/multi-select';
 
 const sectionSchema = z.object({
   id: z.string().default(() => uuidv4()),
@@ -41,7 +40,8 @@ const sectionSchema = z.object({
 const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.array(z.string()).min(1, 'At least one category is required.'),
+  category: z.string().min(1, 'A main category is required.'),
+  subCategory: z.string().optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -81,10 +81,45 @@ const formatDateForInput = (date: Date | string | null | undefined): string => {
     }
 }
 
+const getParentCategory = (subCategoryValue: string): string | undefined => {
+    for (const parent in subCategoryMap) {
+        if (subCategoryMap[parent].includes(subCategoryValue)) {
+            return parent;
+        }
+    }
+    // If not found in subcategories, it might be a main category itself
+    if (allCategories.some(c => c.name === subCategoryValue)) {
+        return subCategoryValue;
+    }
+    return undefined;
+};
+
+
 const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormValues => {
+    
+    const getInitialCategoryInfo = () => {
+        let category = '';
+        let subCategory = '';
+        
+        const initialCat = initialData?.category || defaultCategory;
+        if (initialCat) {
+            const parent = getParentCategory(initialCat);
+            if (parent && parent !== initialCat) {
+                category = parent;
+                subCategory = initialCat;
+            } else {
+                category = initialCat;
+            }
+        }
+        return { category, subCategory };
+    }
+
+    const { category, subCategory } = getInitialCategoryInfo();
+
     const base = {
       name: '',
-      category: defaultCategory ? [defaultCategory] : [],
+      category: category,
+      subCategory: subCategory,
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -118,7 +153,8 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
         return {
             ...base,
             ...initialData,
-            category: Array.isArray(initialData.category) ? initialData.category : [initialData.category],
+            category: category,
+            subCategory: subCategory,
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
@@ -141,7 +177,8 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     defaultValues: getDefaultValues(initialData, defaultCategory),
   });
   
-  const allSubCategoryOptions = Array.from(new Set(Object.values(subCategoryMap).flat())).map(c => ({ label: c, value: c }));
+  const selectedCategory = useWatch({ control: form.control, name: "category" });
+  const subCategories = subCategoryMap[selectedCategory] || [];
 
 
   const { fields, append, remove } = useFieldArray({
@@ -155,10 +192,23 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   useEffect(() => {
     form.setValue('durationMin', totalDuration);
   }, [totalDuration, form]);
+  
+   useEffect(() => {
+    // When the main category changes, reset the sub-category field
+    form.setValue('subCategory', '');
+  }, [selectedCategory, form]);
+
 
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
-      const result = await addExamAction(data);
+      // Use the subCategory as the final category if it exists, otherwise use the main category.
+      const finalCategory = data.subCategory || data.category;
+      const dataToSave = {
+        ...data,
+        category: finalCategory,
+      };
+
+      const result = await addExamAction(dataToSave as any);
       if (result?.errors && Object.keys(result.errors).length > 0) {
         Object.entries(result.errors).forEach(([key, value]) => {
           if (value && key in form.getValues()) {
@@ -201,26 +251,42 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                       </FormItem>
                     )}
                 />
-                 <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Categories / Sub-Categories</FormLabel>
-                        <FormControl>
-                            <MultiSelect
-                                options={allSubCategoryOptions}
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                placeholder="Select categories..."
-                                variant="secondary"
-                            />
-                        </FormControl>
-                        <FormDescription>Select one or more categories for this exam.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {allCategories.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    {subCategories.length > 0 && (
+                         <FormField
+                            control={form.control}
+                            name="subCategory"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Sub-Category</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {subCategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
                     )}
-                />
+                </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
