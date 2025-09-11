@@ -61,16 +61,22 @@ export const allCategories: Category[] = [
     },
 ];
 
-export const subCategories = {
+export const subCategories: Record<string, string[]> = {
     Banking: ['IBPS', 'SBI', 'RBI'],
     SSC: ['CGL', 'CHSL', 'MTS'],
     Railway: ['NTPC', 'Group D', 'ALP'],
+    UPSC: ['CSE', 'NDA', 'CDS'],
+    JEE: ['Main', 'Advanced'],
+    NEET: ['UG', 'PG'],
 };
 
 export const allSubCategories = [
     ...subCategories.Banking,
     ...subCategories.SSC,
     ...subCategories.Railway,
+    ...subCategories.UPSC,
+    ...subCategories.JEE,
+    ...subCategories.NEET,
 ];
 
 export const categoryNames = allCategories.map(c => c.name);

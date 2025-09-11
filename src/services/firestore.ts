@@ -16,9 +16,18 @@ import {
   updateDoc,
   setDoc,
 } from 'firebase/firestore';
-import { allCategories, allSubCategories } from '@/lib/categories.tsx';
+import { allCategories, allSubCategories, subCategories as subCategoryMap } from '@/lib/categories';
 import type { Exam, Question, UserProfile, ExamResult } from '@/lib/data-structures';
 import { getQuestionsForExam as getQuestions } from './firestore';
+
+const getParentCategory = (subCategory: string): string | undefined => {
+    for (const parent in subCategoryMap) {
+        if (subCategoryMap[parent].includes(subCategory)) {
+            return parent;
+        }
+    }
+    return undefined;
+};
 
 export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
@@ -28,7 +37,9 @@ export async function getExams(category?: string): Promise<Exam[]> {
         if (isSubCategory) {
             // This is a sub-category, so query based on exam name prefix.
             // This is a workaround. A better solution is a dedicated 'subCategory' field.
-             q = query(examsCollection, where('category', 'in', ['Banking', 'SSC', 'Railway']));
+             const parentCategory = getParentCategory(category);
+             const categoriesToQuery = parentCategory ? [parentCategory] : Object.keys(subCategoryMap);
+             q = query(examsCollection, where('category', 'in', categoriesToQuery));
         } else {
             q = query(examsCollection, where('category', '==', category));
         }
@@ -57,8 +68,10 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
 
     if (category) {
         if (isSubCategory) {
-            // For sub-categories like SBI, IBPS, query the parent "Banking" category
-            q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', ['Banking', 'SSC', 'Railway']));
+            // For sub-categories like SBI, IBPS, query the parent category
+            const parentCategory = getParentCategory(category);
+            const categoriesToQuery = parentCategory ? [parentCategory] : Object.keys(subCategoryMap);
+            q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', categoriesToQuery));
         } else {
             // For main categories
             q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
@@ -71,7 +84,7 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const snapshot = await getDocs(q);
     let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
     
-    // If it was a banking sub-category, filter by name prefix
+    // If it was a sub-category, filter by name prefix
     if (isSubCategory) {
         examsData = examsData.filter(exam => exam.name.startsWith(category));
     }

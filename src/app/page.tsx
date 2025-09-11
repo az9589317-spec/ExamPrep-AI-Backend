@@ -3,11 +3,11 @@ import Link from 'next/link';
 import React from 'react';
 import Header from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Briefcase } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import ExamGenerator from '@/components/app/exam-generator';
 import { getExamCategories } from '@/services/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { allCategories, subCategories } from '@/lib/categories.tsx';
+import { allCategories, subCategories } from '@/lib/categories';
 
 async function CategoryList() {
     const { examCountByCategory } = await getExamCategories();
@@ -25,7 +25,7 @@ async function CategoryList() {
                         <Card className="flex flex-col justify-between h-full hover:bg-card/70 transition-all duration-300 shadow-glow-br hover:shadow-glow-tl">
                             <CardHeader>
                                 <div className="flex items-center gap-4">
-                                    {category.icon || <Briefcase className="h-8 w-8 text-gray-500" />}
+                                    {category.icon}
                                     <CardTitle className="font-headline">{category.name}</CardTitle>
                                 </div>
                                 <CardDescription className="pt-2">
