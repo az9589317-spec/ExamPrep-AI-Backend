@@ -28,7 +28,7 @@ const sectionSchema = z.object({
 const addExamSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.string().min(1, 'A category is required.'),
+  category: z.union([z.string(), z.array(z.string())]).refine(val => (Array.isArray(val) && val.length > 0) || (typeof val === 'string' && val.length > 0), { message: 'A category is required.'}),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -97,8 +97,10 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
     }
     
     revalidatePath('/admin');
-    if (data.category.length > 0) {
+    if (Array.isArray(data.category) && data.category.length > 0) {
         revalidatePath(`/admin/category/${data.category[0]}`);
+    } else if (typeof data.category === 'string') {
+        revalidatePath(`/admin/category/${data.category}`);
     }
 
     return {
@@ -387,6 +389,7 @@ export async function seedDatabaseAction() {
 
             const examPayload: any = {
                 ...mockExam,
+                category: [mockExam.category], // Convert to array
                 sections: [
                     { id: 's1', name: 'Quantitative Aptitude', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
                     { id: 's2', name: 'Reasoning Ability', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
@@ -508,3 +511,4 @@ export async function updateUserStatusAction({ userId, status }: { userId: strin
         return { success: false, message: 'Failed to update user status.' };
     }
 }
+

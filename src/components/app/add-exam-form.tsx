@@ -22,6 +22,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { allCategories, subCategories as subCategoryMap } from '@/lib/categories';
 import type { Exam } from '@/lib/data-structures';
 import { format } from 'date-fns';
+import { MultiSelect } from '../ui/multi-select';
+
 
 const sectionSchema = z.object({
   id: z.string().default(() => uuidv4()),
@@ -41,7 +43,7 @@ const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
   category: z.string().min(1, 'A main category is required.'),
-  subCategory: z.string().optional(),
+  subCategories: z.array(z.string()).optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -87,10 +89,6 @@ const getParentCategory = (subCategoryValue: string): string | undefined => {
             return parent;
         }
     }
-    // If not found in subcategories, it might be a main category itself
-    if (allCategories.some(c => c.name === subCategoryValue)) {
-        return subCategoryValue;
-    }
     return undefined;
 };
 
@@ -99,27 +97,46 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
     
     const getInitialCategoryInfo = () => {
         let category = '';
-        let subCategory = '';
+        let subCategories: string[] = [];
         
-        const initialCat = initialData?.category || defaultCategory;
-        if (initialCat) {
-            const parent = getParentCategory(initialCat);
-            if (parent && parent !== initialCat) {
+        const initialCats = initialData?.category;
+        
+        if (Array.isArray(initialCats) && initialCats.length > 0) {
+            const firstCat = initialCats[0];
+            const parent = getParentCategory(firstCat);
+             if (parent) {
                 category = parent;
-                subCategory = initialCat;
+                subCategories = initialCats.filter(c => subCategoryMap[parent]?.includes(c));
             } else {
-                category = initialCat;
+                category = firstCat;
+            }
+        } else if (typeof initialCats === 'string' && initialCats) {
+             const parent = getParentCategory(initialCats);
+             if (parent && parent !== initialCats) {
+                category = parent;
+                subCategories = [initialCats];
+            } else {
+                category = initialCats;
+            }
+        } else if (defaultCategory) {
+            const parent = getParentCategory(defaultCategory);
+            if(parent) {
+              category = parent;
+              subCategories = [defaultCategory];
+            } else {
+              category = defaultCategory;
             }
         }
-        return { category, subCategory };
+
+        return { category, subCategories };
     }
 
-    const { category, subCategory } = getInitialCategoryInfo();
+    const { category, subCategories } = getInitialCategoryInfo();
 
     const base = {
       name: '',
       category: category,
-      subCategory: subCategory,
+      subCategories: subCategories,
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -154,7 +171,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
             ...base,
             ...initialData,
             category: category,
-            subCategory: subCategory,
+            subCategories: subCategories,
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
@@ -178,7 +195,8 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   });
   
   const selectedCategory = useWatch({ control: form.control, name: "category" });
-  const subCategories = subCategoryMap[selectedCategory] || [];
+  const possibleSubCategories = subCategoryMap[selectedCategory] || [];
+  const subCategoryOptions = possibleSubCategories.map(sc => ({ label: sc, value: sc }));
 
 
   const { fields, append, remove } = useFieldArray({
@@ -194,19 +212,21 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   }, [totalDuration, form]);
   
    useEffect(() => {
-    // When the main category changes, reset the sub-category field
-    form.setValue('subCategory', '');
+    form.setValue('subCategories', []);
   }, [selectedCategory, form]);
 
 
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
-      // Use the subCategory as the final category if it exists, otherwise use the main category.
-      const finalCategory = data.subCategory || data.category;
+      const finalCategories = (data.subCategories && data.subCategories.length > 0) ? data.subCategories : [data.category];
+
       const dataToSave = {
         ...data,
-        category: finalCategory,
+        category: finalCategories,
       };
+      
+      // We no longer need subCategories field in the document
+      delete (dataToSave as any).subCategories;
 
       const result = await addExamAction(dataToSave as any);
       if (result?.errors && Object.keys(result.errors).length > 0) {
@@ -257,7 +277,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         name="category"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Category</FormLabel>
+                            <FormLabel>Main Category</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -268,19 +288,21 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         </FormItem>
                         )}
                     />
-                    {subCategories.length > 0 && (
+                    {possibleSubCategories.length > 0 && (
                          <FormField
                             control={form.control}
-                            name="subCategory"
+                            name="subCategories"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Sub-Category</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {subCategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
+                                <FormLabel>Sub-Categories (Optional)</FormLabel>
+                                <FormControl>
+                                  <MultiSelect 
+                                    options={subCategoryOptions}
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value || []}
+                                    placeholder="Select one or more sub-categories..."
+                                  />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}
@@ -518,3 +540,4 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     </Form>
   );
 }
+
