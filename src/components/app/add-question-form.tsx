@@ -274,7 +274,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Question Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || 'Standard'}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="Standard">Standard (MCQ)</SelectItem>
