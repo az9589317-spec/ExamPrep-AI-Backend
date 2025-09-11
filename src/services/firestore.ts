@@ -51,22 +51,13 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const examsCollection = collection(db, 'exams');
     let q;
     
+    const conditions = [where('status', '==', 'published')];
+
     if (category) {
-        const isParentCategoryWithSubs = !!subCategoryMap[category];
-        
-        if (isParentCategoryWithSubs) {
-            const subCategories = subCategoryMap[category] || [];
-            if (subCategories.length > 0) {
-                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains-any', subCategories));
-            } else {
-                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains', category));
-            }
-        } else {
-             q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains', category));
-        }
-    } else {
-        q = query(examsCollection, where('status', '==', 'published'));
+      conditions.push(where('category', 'array-contains', category));
     }
+    
+    q = query(examsCollection, ...conditions);
     
     const snapshot = await getDocs(q);
     let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
@@ -85,7 +76,7 @@ export async function getExam(id: string): Promise<Exam | null> {
   if (!examDoc.exists()) {
     return null;
   }
-  return JSON.parse(JSON.stringify({ id: examDoc.id, ...examDoc.data() }));
+  return JSON.parse(JSON.stringify({ id: examDoc.id, ...doc.data() }));
 }
 
 export async function getQuestionsForExam(examId: string): Promise<Question[]> {

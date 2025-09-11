@@ -12,7 +12,7 @@ const sscSubCategories = subCategories.SSC.map(name => ({
         ? 'Practice with actual questions from past SSC exams.'
         : `Exams and tests for SSC ${name}.`,
     icon: name === 'Previous Year Paper' ? <BookCopy className="h-8 w-8 text-primary" /> : <Users className="h-8 w-8 text-primary" />,
-    category: name === 'Previous Year Paper' ? 'SSC Previous Year Paper' : name,
+    category: name,
 }));
 
 export default async function SscPage() {

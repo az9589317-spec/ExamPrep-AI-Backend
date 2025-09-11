@@ -12,7 +12,7 @@ const bankingSubCategories = subCategories.Banking.map(name => ({
         ? 'Practice with actual questions from past banking exams.'
         : `Exams conducted by ${name}.`,
     icon: name === 'Previous Year Paper' ? <BookCopy className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />,
-    category: name === 'Previous Year Paper' ? 'Banking Previous Year Paper' : name,
+    category: name,
 }));
 
 export default async function BankingPage() {

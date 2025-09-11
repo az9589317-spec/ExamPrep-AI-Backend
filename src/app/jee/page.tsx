@@ -12,7 +12,7 @@ const jeeSubCategories = subCategories.JEE.map(name => ({
         ? 'Practice with actual questions from past JEE exams.'
         : `Exams and tests for JEE ${name}.`,
     icon: name === 'Previous Year Paper' ? <BookCopy className="h-8 w-8 text-primary" /> : <Atom className="h-8 w-8 text-primary" />,
-    category: name === 'Previous Year Paper' ? 'JEE Previous Year Paper' : name,
+    category: name,
 }));
 
 export default async function JeePage() {

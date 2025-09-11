@@ -12,7 +12,7 @@ const neetSubCategories = subCategories.NEET.map(name => ({
         ? 'Practice with actual questions from past NEET exams.'
         : `Exams and tests for NEET ${name}.`,
     icon: name === 'Previous Year Paper' ? <BookCopy className="h-8 w-8 text-primary" /> : <Stethoscope className="h-8 w-8 text-primary" />,
-    category: name === 'Previous Year Paper' ? 'NEET Previous Year Paper' : name,
+    category: name,
 }));
 
 export default async function NeetPage() {

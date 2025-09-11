@@ -12,7 +12,7 @@ const upscSubCategories = subCategories.UPSC.map(name => ({
         ? 'Practice with actual questions from past UPSC exams.'
         : `Exams and tests for ${name}.`,
     icon: name === 'Previous Year Paper' ? <BookCopy className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />,
-    category: name === 'Previous Year Paper' ? 'UPSC Previous Year Paper' : name,
+    category: name,
 }));
 
 export default async function UpscPage() {
