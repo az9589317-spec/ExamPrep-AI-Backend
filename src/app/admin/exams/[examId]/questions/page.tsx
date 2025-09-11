@@ -13,11 +13,122 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getExam, getQuestionsForExam, type Exam, type Question } from "@/services/firestore";
+import { getExam, getQuestionsForExam, type Exam, type Question, type Section } from "@/services/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteQuestionAction } from "@/app/admin/actions";
+
+function SectionQuestions({ 
+    section, 
+    questions, 
+    onEdit, 
+    onDelete,
+    isPending
+}: { 
+    section: Section, 
+    questions: Question[], 
+    onEdit: (question: Question) => void, 
+    onDelete: (questionId: string) => void,
+    isPending: boolean
+}) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{section.name}</CardTitle>
+                <CardDescription>{questions.length} questions in this section.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[60%]">Content</TableHead>
+                            <TableHead className="hidden md:table-cell">Type</TableHead>
+                            <TableHead className="hidden md:table-cell">Topic</TableHead>
+                            <TableHead className="hidden md:table-cell">Difficulty</TableHead>
+                            <TableHead>
+                            <span className="sr-only">Actions</span>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {questions.map((question) => (
+                        <TableRow key={question.id}>
+                        <TableCell className="font-medium">
+                            <div className="flex items-start gap-2">
+                                {question.questionType === 'Reading Comprehension' ? <BookOpen className="mt-1 h-4 w-4 text-muted-foreground" /> : <FileText className="mt-1 h-4 w-4 text-muted-foreground" />}
+                                <p className="line-clamp-2">{question.questionType === 'Reading Comprehension' ? question.passage : question.questionText}</p>
+                            </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                            <Badge variant="outline" className="whitespace-nowrap">
+                                {question.questionType}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{question.topic}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                            <Badge variant={
+                            question.difficulty === 'hard' ? 'destructive' :
+                            question.difficulty === 'medium' ? 'secondary' : 'outline'
+                            }>
+                            {question.difficulty}
+                            </Badge>
+                        </TableCell>
+                        <TableCell>
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onSelect={() => onEdit(question)}>
+                                Edit
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the question.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => onDelete(question.id)}
+                                                disabled={isPending}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                            >
+                                                {isPending ? 'Deleting...' : 'Delete'}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+                {questions.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">
+                        No questions found in this section.
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
 
 
 export default function ExamQuestionsPage() {
@@ -129,11 +240,10 @@ export default function ExamQuestionsPage() {
   }
 
   return (
-    <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+    <div className="grid flex-1 items-start gap-8">
+        <div className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-                <Link href={`/admin/category/${encodeURIComponent(exam.category)}`}>
+                <Link href={`/admin/category/${encodeURIComponent(exam.category as string)}`}>
                 <Button variant="outline" size="icon" className="h-7 w-7">
                     <ArrowLeft className="h-4 w-4" />
                     <span className="sr-only">Back</span>
@@ -152,96 +262,24 @@ export default function ExamQuestionsPage() {
                   </span>
                 </Button>
             </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60%]">Content</TableHead>
-                <TableHead className="hidden md:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Subject</TableHead>
-                <TableHead className="hidden md:table-cell">Difficulty</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((question) => (
-                <TableRow key={question.id}>
-                  <TableCell className="font-medium">
-                     <div className="flex items-start gap-2">
-                           {question.questionType === 'Reading Comprehension' ? <BookOpen className="mt-1 h-4 w-4 text-muted-foreground" /> : <FileText className="mt-1 h-4 w-4 text-muted-foreground" />}
-                            <p className="line-clamp-2">{question.questionType === 'Reading Comprehension' ? question.passage : question.questionText}</p>
-                        </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline" className="whitespace-nowrap">
-                        {question.questionType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{question.subject}</TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant={
-                      question.difficulty === 'hard' ? 'destructive' :
-                      question.difficulty === 'medium' ? 'secondary' : 'outline'
-                    }>
-                      {question.difficulty}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => openEditDialog(question)}>
-                          Edit
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the question.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={() => handleDeleteQuestion(question.id)}
-                                        disabled={isPending}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                        {isPending ? 'Deleting...' : 'Delete'}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-            {questions.length === 0 && (
-                <div className="text-center py-10 text-muted-foreground">
-                    No questions found for this exam.
-                </div>
-            )}
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="grid gap-8">
+            {(exam.sections || []).map(section => {
+                const sectionQuestions = questions.filter(q => q.subject === section.name);
+                return (
+                    <SectionQuestions 
+                        key={section.id}
+                        section={section}
+                        questions={sectionQuestions}
+                        onEdit={openEditDialog}
+                        onDelete={handleDeleteQuestion}
+                        isPending={isPending}
+                    />
+                )
+            })}
+        </div>
+
       
        <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
           <DialogContent className="sm:max-w-4xl">
