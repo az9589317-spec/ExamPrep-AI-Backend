@@ -141,7 +141,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     defaultValues: getDefaultValues(initialData, defaultCategory),
   });
   
-  const allSubCategoryOptions = Object.values(subCategoryMap).flat().map(c => ({ label: c, value: c }));
+  const allSubCategoryOptions = Array.from(new Set(Object.values(subCategoryMap).flat())).map(c => ({ label: c, value: c }));
 
 
   const { fields, append, remove } = useFieldArray({
