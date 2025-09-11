@@ -76,7 +76,7 @@ export async function getExam(id: string): Promise<Exam | null> {
   if (!examDoc.exists()) {
     return null;
   }
-  return JSON.parse(JSON.stringify({ id: examDoc.id, ...doc.data() }));
+  return JSON.parse(JSON.stringify({ id: examDoc.id, ...examDoc.data() }));
 }
 
 export async function getQuestionsForExam(examId: string): Promise<Question[]> {
