@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from "next/link";
@@ -12,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AddExamForm } from "@/components/app/add-exam-form";
-import { getExams, type Exam } from "@/services/firestore";
+import { getPublishedExams, type Exam } from "@/services/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -33,7 +34,7 @@ export default function AdminCategoryPage() {
     async function fetchExams() {
         setIsLoading(true);
         try {
-            const fetchedExams = await getExams(category);
+            const fetchedExams = await getPublishedExams(category);
             setExams(fetchedExams);
         } catch (error) {
             console.error(`Failed to fetch exams for category ${category}:`, error);

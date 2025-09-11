@@ -1,4 +1,5 @@
 
+
 // src/services/firestore.ts
 'use server';
 
@@ -32,27 +33,14 @@ const getParentCategory = (subCategory: string): string | undefined => {
 export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
   let q;
-    if (category) {
-        const isSubCategory = allSubCategories.includes(category);
-        if (isSubCategory) {
-            // This is a sub-category, so query based on exam name prefix.
-            // This is a workaround. A better solution is a dedicated 'subCategory' field.
-             const parentCategory = getParentCategory(category);
-             const categoriesToQuery = parentCategory ? [parentCategory] : Object.keys(subCategoryMap);
-             q = query(examsCollection, where('category', 'in', categoriesToQuery));
-        } else {
-            q = query(examsCollection, where('category', '==', category));
-        }
-    } else {
-        q = query(examsCollection, orderBy('name', 'asc'));
-    }
+  if (category) {
+      q = query(examsCollection, where('category', '==', category));
+  } else {
+      q = query(examsCollection, orderBy('name', 'asc'));
+  }
     
   const snapshot = await getDocs(q);
   let exams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
-
-  if (category && allSubCategories.includes(category)) {
-      exams = exams.filter(exam => exam.name.startsWith(category));
-  }
   
   // Sort client-side if we couldn't do it in the query
   exams.sort((a, b) => a.name.localeCompare(b.name));
@@ -64,18 +52,8 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const examsCollection = collection(db, 'exams');
     let q;
     
-    const isSubCategory = category && allSubCategories.includes(category);
-
     if (category) {
-        if (isSubCategory) {
-            // For sub-categories like SBI, IBPS, query the parent category
-            const parentCategory = getParentCategory(category);
-            const categoriesToQuery = parentCategory ? [parentCategory] : Object.keys(subCategoryMap);
-            q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', categoriesToQuery));
-        } else {
-            // For main categories
-            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
-        }
+        q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
     } else {
         // Query only by status, then sort in code to avoid needing a composite index.
         q = query(examsCollection, where('status', '==', 'published'));
@@ -84,11 +62,6 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const snapshot = await getDocs(q);
     let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
     
-    // If it was a sub-category, filter by name prefix
-    if (isSubCategory) {
-        examsData = examsData.filter(exam => exam.name.startsWith(category));
-    }
-
     // Always sort by name in the code.
     examsData.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -127,14 +100,15 @@ export async function getExamCategories() {
     const exams = snapshot.docs.map(doc => doc.data() as Exam);
 
     const examCountByCategory = exams.reduce((acc, exam) => {
+        let parentCategory = getParentCategory(exam.category);
+        
+        // Count for the specific sub-category
         acc[exam.category] = (acc[exam.category] || 0) + 1;
-
-        // Also add to sub-categories if applicable
-        allSubCategories.forEach(sub => {
-            if (exam.name.startsWith(sub)) {
-                acc[sub] = (acc[sub] || 0) + 1;
-            }
-        });
+        
+        // Count for the parent category
+        if (parentCategory) {
+            acc[parentCategory] = (acc[parentCategory] || 0) + 1;
+        }
 
         return acc;
     }, {} as Record<string, number>);

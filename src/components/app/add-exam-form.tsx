@@ -15,11 +15,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Loader2, PlusCircle, Trash2, Settings, Shield, Calendar, ListChecks, TestTube2, AlertCircle } from 'lucide-react';
-import { useTransition, useEffect } from 'react';
+import { useTransition, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { v4 as uuidv4 } from 'uuid';
-import { categoryNames } from '@/lib/categories';
+import { categoryNames, subCategories as subCategoryMap } from '@/lib/categories';
 import type { Exam } from '@/lib/data-structures';
 import { format } from 'date-fns';
 
@@ -41,6 +41,7 @@ const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
   category: z.string().min(1, 'Category is required.'),
+  subCategory: z.string().optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -80,10 +81,24 @@ const formatDateForInput = (date: Date | string | null | undefined): string => {
     }
 }
 
+// Find parent category for an existing sub-category
+const getParentCategory = (subCategoryValue: string): string | undefined => {
+    for (const [parent, subs] of Object.entries(subCategoryMap)) {
+        if (subs.includes(subCategoryValue)) {
+            return parent;
+        }
+    }
+    return undefined;
+};
+
+
 const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormValues => {
+    const parentCategory = initialData ? getParentCategory(initialData.category) : undefined;
+
     const base = {
       name: '',
       category: defaultCategory || '',
+      subCategory: '',
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -112,16 +127,28 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
       fullScreenMode: false,
       tabSwitchDetection: false,
     };
+
     if (initialData) {
         return {
             ...base,
             ...initialData,
+            category: parentCategory || initialData.category,
+            subCategory: parentCategory ? initialData.category : '',
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
             overallCutoff: initialData.overallCutoff || undefined,
             maxAttempts: initialData.maxAttempts || undefined,
         } as FormValues;
+    }
+     if (defaultCategory) {
+        const parent = getParentCategory(defaultCategory);
+        if (parent) {
+            base.category = parent;
+            base.subCategory = defaultCategory;
+        } else {
+            base.category = defaultCategory;
+        }
     }
     return base;
 };
@@ -136,6 +163,18 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     resolver: zodResolver(formSchema),
     defaultValues: getDefaultValues(initialData, defaultCategory),
   });
+  
+  const selectedCategory = useWatch({ control: form.control, name: 'category' });
+  const [subCategories, setSubCategories] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (selectedCategory && subCategoryMap[selectedCategory]) {
+        setSubCategories(subCategoryMap[selectedCategory]);
+    } else {
+        setSubCategories([]);
+        form.setValue('subCategory', ''); // Reset subcategory if main category changes
+    }
+  }, [selectedCategory, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -152,7 +191,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
       const result = await addExamAction(data);
-      if (result?.errors) {
+      if (result?.errors && Object.keys(result.errors).length > 0) {
         Object.entries(result.errors).forEach(([key, value]) => {
           if (value && key in form.getValues()) {
             form.setError(key as keyof FormValues, { message: value[0] });
@@ -201,7 +240,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel>Category</FormLabel>
-                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                             <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {categoryNames.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -211,6 +250,26 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         </FormItem>
                         )}
                     />
+                    {subCategories.length > 0 && (
+                        <FormField
+                            control={form.control}
+                            name="subCategory"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Sub-category</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {subCategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    )}
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
                         name="examType"
@@ -231,25 +290,25 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         </FormItem>
                         )}
                     />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>
-                            <SelectItem value="published">Published</SelectItem>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                <SelectItem value="published">Published</SelectItem>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="archived">Archived</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                 </div>
               </CardContent>
             </Card>
             

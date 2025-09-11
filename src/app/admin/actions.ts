@@ -29,6 +29,7 @@ const addExamSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
   category: z.string().min(1, 'Category is required.'),
+  subCategory: z.string().optional(), // This will hold the final category value if a sub-category is selected
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -67,12 +68,13 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
     }
   }
   
-  const { id: examId, startTime: startTimeStr, endTime: endTimeStr, ...examData } = validatedFields.data;
+  const { id: examId, startTime: startTimeStr, endTime: endTimeStr, subCategory, ...examData } = validatedFields.data;
   const isEditing = !!examId;
 
   try {
     const dataToSave: any = {
       ...examData,
+      category: subCategory || examData.category, // Use subCategory if it exists, otherwise use main category
       updatedAt: new Date(),
     };
     
@@ -99,11 +101,11 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
     }
     
     revalidatePath('/admin');
-    revalidatePath(`/admin/category/${examData.category}`);
+    revalidatePath(`/admin/category/${dataToSave.category}`);
 
     return {
       message: `Exam "${data.name}" ${isEditing ? 'updated' : 'added'} successfully!`,
-      errors: null
+      errors: {},
     };
   } catch (error) {
     console.error(`Error ${isEditing ? 'updating' : 'adding'} document: `, error);
