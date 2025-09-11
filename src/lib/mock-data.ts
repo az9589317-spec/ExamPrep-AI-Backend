@@ -12,6 +12,17 @@ export const exams = [
       cutoff: 12.5,
       negativeMarkPerWrong: 0.25,
     },
+     { 
+      id: 'sbi-clerk-prelims-mock-1', 
+      name: 'SBI Clerk Prelims Mock 1', 
+      category: 'Banking', 
+      status: 'published' as const, 
+      totalQuestions: 100,
+      totalMarks: 100,
+      durationMin: 60,
+      cutoff: 75,
+      negativeMarkPerWrong: 0.25,
+    },
     { 
       id: 'ibps-po-mains-mock-1', 
       name: 'IBPS PO Mains Mock 1', 
@@ -23,10 +34,21 @@ export const exams = [
       cutoff: 71.25,
       negativeMarkPerWrong: 0.25,
     },
+      { 
+      id: 'ibps-clerk-prelims-mock-3', 
+      name: 'IBPS Clerk Prelims Mock 3', 
+      category: 'Banking', 
+      status: 'published' as const, 
+      totalQuestions: 100,
+      totalMarks: 100,
+      durationMin: 60,
+      cutoff: 78,
+      negativeMarkPerWrong: 0.25,
+    },
     { 
       id: 'rbi-assistant-prelims-pyq-2022', 
       name: 'RBI Assistant Prelims 2022', 
-      category: 'Previous Year Paper', 
+      category: 'Banking', 
       status: 'published' as const, 
       totalQuestions: 100,
       totalMarks: 100,
@@ -167,7 +189,13 @@ export const questions: Record<string, any[]> = {
       explanation: `This is a placeholder explanation for question ${i + 6}.`
     })),
   ],
-  'rbi-assistant-prelims-pyq-2022': [
+  'sbi-clerk-prelims-mock-1': [
+      ...Array.from({ length: 100 }, (_, i) => ({ id: `q${i+1}`, questionText: `Placeholder question ${i+1}`, subject: 'Mixed', topic: 'Clerk Prelims', difficulty: 'easy' as const, options: [{text: 'A'}, {text:'B'}, {text:'C'}, {text:'D'}], correctOptionIndex: 0, marks: 1}))
+  ],
+  'ibps-clerk-prelims-mock-3': [
+      ...Array.from({ length: 100 }, (_, i) => ({ id: `q${i+1}`, questionText: `Placeholder question ${i+1}`, subject: 'Mixed', topic: 'Clerk Prelims', difficulty: 'easy' as const, options: [{text: 'A'}, {text:'B'}, {text:'C'}, {text:'D'}], correctOptionIndex: 0, marks: 1}))
+  ],
+   'rbi-assistant-prelims-pyq-2022': [
     ...Array.from({ length: 100 }, (_, i) => ({ id: `q${i+1}`, questionText: `Placeholder question ${i+1}`, subject: 'Mixed', topic: 'PYQ', difficulty: 'medium' as const, options: [{text: 'A'}, {text:'B'}, {text:'C'}, {text:'D'}], correctOptionIndex: 0, marks: 1}))
   ],
   'daily-quiz-quant-21-jul': [

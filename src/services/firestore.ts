@@ -20,39 +20,64 @@ import { allCategories } from '@/lib/categories.tsx';
 import type { Exam, Question, UserProfile, ExamResult } from '@/lib/data-structures';
 import { getQuestionsForExam as getQuestions } from './firestore';
 
+const bankingSubCategories = ['IBPS', 'SBI', 'RBI'];
+
 export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
   let q;
     if (category) {
-        // Query only by category and sort in-memory to avoid composite index requirement.
-        q = query(examsCollection, where('category', '==', category));
+        const isBankingSubCategory = bankingSubCategories.includes(category);
+        if (isBankingSubCategory) {
+            // This is a sub-category, so query based on exam name prefix.
+            // This is a workaround. A better solution is a dedicated 'subCategory' field.
+             q = query(examsCollection, where('category', '==', 'Banking'));
+        } else {
+            q = query(examsCollection, where('category', '==', category));
+        }
     } else {
         q = query(examsCollection, orderBy('name', 'asc'));
     }
     
   const snapshot = await getDocs(q);
-  const exams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
+  let exams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
+
+  if (category && bankingSubCategories.includes(category)) {
+      exams = exams.filter(exam => exam.name.startsWith(category));
+  }
   
   // Sort client-side if we couldn't do it in the query
-  if (category) {
-    exams.sort((a, b) => a.name.localeCompare(b.name));
-  }
+  exams.sort((a, b) => a.name.localeCompare(b.name));
+  
   return JSON.parse(JSON.stringify(exams));
 }
 
 export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const examsCollection = collection(db, 'exams');
     let q;
+    
+    const isBankingSubCategory = category && bankingSubCategories.includes(category);
+
     if (category) {
-        q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+        if (isBankingSubCategory) {
+            // For sub-categories like SBI, IBPS, query the parent "Banking" category
+            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', 'Banking'));
+        } else {
+            // For main categories
+            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+        }
     } else {
         // Query only by status, then sort in code to avoid needing a composite index.
         q = query(examsCollection, where('status', '==', 'published'));
     }
     
     const snapshot = await getDocs(q);
-    const examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
+    let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
     
+    // If it was a banking sub-category, filter by name prefix
+    if (isBankingSubCategory) {
+        examsData = examsData.filter(exam => exam.name.startsWith(category));
+    }
+
     // Always sort by name in the code.
     examsData.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -92,6 +117,14 @@ export async function getExamCategories() {
 
     const examCountByCategory = exams.reduce((acc, exam) => {
         acc[exam.category] = (acc[exam.category] || 0) + 1;
+
+        // Also add to sub-categories if applicable
+        bankingSubCategories.forEach(sub => {
+            if (exam.name.startsWith(sub)) {
+                acc[sub] = (acc[sub] || 0) + 1;
+            }
+        });
+
         return acc;
     }, {} as Record<string, number>);
     

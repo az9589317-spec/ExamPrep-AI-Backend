@@ -61,4 +61,8 @@ export const allCategories: Category[] = [
     },
 ];
 
+export const subCategories = {
+    Banking: ['IBPS', 'SBI', 'RBI']
+};
+
 export const categoryNames = allCategories.map(c => c.name);
