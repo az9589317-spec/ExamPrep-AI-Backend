@@ -53,20 +53,20 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     let q;
     
     if (category) {
-        const isSubCategory = allSubCategories.includes(category);
+        const isParentCategoryWithSubs = !!subCategoryMap[category];
         
-        if (isSubCategory) {
-            // If the provided category is a sub-category (e.g., "SBI"), query for it directly.
-            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
-        } else {
+        if (isParentCategoryWithSubs) {
             // If it's a main category (e.g., "Banking"), query for all its sub-categories.
             const subCategories = subCategoryMap[category] || [];
             if (subCategories.length > 0) {
                  q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', subCategories));
             } else {
-                 // For categories with no defined sub-categories
+                 // Should not happen if isParentCategoryWithSubs is true, but as a fallback
                  q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
             }
+        } else {
+            // If the provided category is a sub-category or a category with no subs.
+             q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
         }
     } else {
         // Query only by status, then sort in code to avoid needing a composite index.
@@ -108,18 +108,17 @@ export async function getQuestionsForExam(examId: string): Promise<Question[]> {
 
 export async function getExamCategories() {
     const examsCollection = collection(db, 'exams');
-    // Query for published exams to calculate the counts
     const q = query(examsCollection, where('status', '==', 'published'));
     const snapshot = await getDocs(q);
     const exams = snapshot.docs.map(doc => doc.data() as Exam);
 
     const examCountByCategory = exams.reduce((acc, exam) => {
-        let parentCategory = getParentCategory(exam.category);
+        const category = exam.category;
+        // This will count exams for sub-categories like "SBI", "CGL", etc.
+        acc[category] = (acc[category] || 0) + 1;
         
-        // Count for the specific sub-category
-        acc[exam.category] = (acc[exam.category] || 0) + 1;
-        
-        // Count for the parent category
+        // It also finds the parent (e.g., "Banking") and increments its count
+        const parentCategory = getParentCategory(category);
         if (parentCategory) {
             acc[parentCategory] = (acc[parentCategory] || 0) + 1;
         }
@@ -127,7 +126,6 @@ export async function getExamCategories() {
         return acc;
     }, {} as Record<string, number>);
     
-    // Return all predefined categories and the counts for those that have exams.
     const categories = allCategories.map(c => c.name);
 
     return { categories, examCountByCategory };
@@ -290,3 +288,5 @@ export async function getCategoryPerformanceStats(category: string) {
         highestScoreExamName: highestScoreResult.examName,
     };
 }
+
+    

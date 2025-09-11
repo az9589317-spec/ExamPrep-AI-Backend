@@ -1,4 +1,5 @@
 
+
 import { BookCopy, Briefcase, TramFront, Users, Landmark, Atom, Stethoscope, LineChart, Gavel } from "lucide-react";
 import React from "react";
 
@@ -70,13 +71,8 @@ export const subCategories: Record<string, string[]> = {
     NEET: ['UG', 'PG'],
 };
 
-export const allSubCategories = [
-    ...subCategories.Banking,
-    ...subCategories.SSC,
-    ...subCategories.Railway,
-    ...subCategories.UPSC,
-    ...subCategories.JEE,
-    ...subCategories.NEET,
-];
+export const allSubCategories = Object.values(subCategories).flat();
 
 export const categoryNames = allCategories.map(c => c.name);
+
+    
