@@ -34,7 +34,7 @@ export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
   let q;
   if (category) {
-      q = query(examsCollection, where('category', '==', category));
+      q = query(examsCollection, where('category', 'array-contains', category));
   } else {
       q = query(examsCollection, orderBy('name', 'asc'));
   }
@@ -42,7 +42,6 @@ export async function getExams(category?: string): Promise<Exam[]> {
   const snapshot = await getDocs(q);
   let exams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
   
-  // Sort client-side if we couldn't do it in the query
   exams.sort((a, b) => a.name.localeCompare(b.name));
   
   return JSON.parse(JSON.stringify(exams));
@@ -56,27 +55,22 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
         const isParentCategoryWithSubs = !!subCategoryMap[category];
         
         if (isParentCategoryWithSubs) {
-            // If it's a main category (e.g., "Banking"), query for all its sub-categories.
             const subCategories = subCategoryMap[category] || [];
             if (subCategories.length > 0) {
-                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', subCategories));
+                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains-any', subCategories));
             } else {
-                 // Should not happen if isParentCategoryWithSubs is true, but as a fallback
-                 q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains', category));
             }
         } else {
-            // If the provided category is a sub-category or a category with no subs.
-             q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+             q = query(examsCollection, where('status', '==', 'published'), where('category', 'array-contains', category));
         }
     } else {
-        // Query only by status, then sort in code to avoid needing a composite index.
         q = query(examsCollection, where('status', '==', 'published'));
     }
     
     const snapshot = await getDocs(q);
     let examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exam));
     
-    // Always sort by name in the code.
     examsData.sort((a, b) => a.name.localeCompare(b.name));
 
     return JSON.parse(JSON.stringify(examsData));
@@ -85,16 +79,12 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
 
 export async function getExam(id: string): Promise<Exam | null> {
   if (id === 'custom') {
-    // This is a special case for AI-generated exams that are not in Firestore.
-    // The data is handled client-side in the exam page.
-    // Returning a placeholder or null. The client should not call this for 'custom'.
     return null;
   }
   const examDoc = await getDoc(doc(db, 'exams', id));
   if (!examDoc.exists()) {
     return null;
   }
-  // Convert to plain object to avoid serialization errors
   return JSON.parse(JSON.stringify({ id: examDoc.id, ...examDoc.data() }));
 }
 
@@ -113,15 +103,15 @@ export async function getExamCategories() {
     const exams = snapshot.docs.map(doc => doc.data() as Exam);
 
     const examCountByCategory = exams.reduce((acc, exam) => {
-        const category = exam.category;
-        // This will count exams for sub-categories like "SBI", "CGL", etc.
-        acc[category] = (acc[category] || 0) + 1;
-        
-        // It also finds the parent (e.g., "Banking") and increments its count
-        const parentCategory = getParentCategory(category);
-        if (parentCategory) {
-            acc[parentCategory] = (acc[parentCategory] || 0) + 1;
-        }
+        const categories = Array.isArray(exam.category) ? exam.category : [exam.category];
+        categories.forEach(category => {
+            acc[category] = (acc[category] || 0) + 1;
+            
+            const parentCategory = getParentCategory(category);
+            if (parentCategory) {
+                acc[parentCategory] = (acc[parentCategory] || 0) + 1;
+            }
+        });
 
         return acc;
     }, {} as Record<string, number>);

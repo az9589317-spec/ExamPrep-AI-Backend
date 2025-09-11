@@ -28,8 +28,7 @@ const sectionSchema = z.object({
 const addExamSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.string().min(1, 'Category is required.'),
-  subCategory: z.string().optional(), // This will hold the final category value if a sub-category is selected
+  category: z.array(z.string()).min(1, 'At least one category is required.'),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -68,13 +67,12 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
     }
   }
   
-  const { id: examId, startTime: startTimeStr, endTime: endTimeStr, subCategory, ...examData } = validatedFields.data;
+  const { id: examId, startTime: startTimeStr, endTime: endTimeStr, ...examData } = validatedFields.data;
   const isEditing = !!examId;
 
   try {
     const dataToSave: any = {
       ...examData,
-      category: subCategory || examData.category, // Use subCategory if it exists, otherwise use main category
       updatedAt: new Date(),
     };
     
@@ -88,20 +86,20 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
 
     if (isEditing) {
         const examRef = doc(db, 'exams', examId);
-        // When updating, we don't change totalQuestions or totalMarks as they are derived from questions.
-        // These fields should be updated via a separate function or trigger when questions are added/removed.
         await updateDoc(examRef, dataToSave);
     } else {
         const newExamRef = doc(collection(db, 'exams'));
         dataToSave.createdAt = new Date();
-        dataToSave.totalQuestions = 0; // Starts with 0 questions.
-        dataToSave.totalMarks = 0; // Starts with 0 marks.
-        dataToSave.questions = 0; // Legacy field, keeping for compatibility
+        dataToSave.totalQuestions = 0;
+        dataToSave.totalMarks = 0;
+        dataToSave.questions = 0;
         await setDoc(newExamRef, dataToSave);
     }
     
     revalidatePath('/admin');
-    revalidatePath(`/admin/category/${dataToSave.category}`);
+    if (data.category.length > 0) {
+        revalidatePath(`/admin/category/${data.category[0]}`);
+    }
 
     return {
       message: `Exam "${data.name}" ${isEditing ? 'updated' : 'added'} successfully!`,
@@ -389,6 +387,7 @@ export async function seedDatabaseAction() {
 
             const examPayload: any = {
                 ...mockExam,
+                category: [mockExam.category], // Convert category to an array
                 sections: [
                     { id: 's1', name: 'Quantitative Aptitude', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
                     { id: 's2', name: 'Reasoning Ability', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },

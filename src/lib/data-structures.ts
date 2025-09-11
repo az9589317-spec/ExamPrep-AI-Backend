@@ -29,8 +29,7 @@ export interface Section {
 export interface Exam {
   id: string;
   name: string; // Admin defined exam name
-  category: string; // Admin defined category
-  subCategory?: string; // Optional sub-category
+  category: string[] | string; // Admin defined category - can be an array for multiple sub-categories
   examType: 'Prelims' | 'Mains' | 'Mock Test' | 'Practice' | 'Custom'; // Admin choice
   status: 'published' | 'draft' | 'archived';
   

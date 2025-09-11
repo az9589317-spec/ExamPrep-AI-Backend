@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { categoryNames, subCategories as subCategoryMap } from '@/lib/categories';
 import type { Exam } from '@/lib/data-structures';
 import { format } from 'date-fns';
+import { MultiSelect } from '../ui/multi-select';
 
 const sectionSchema = z.object({
   id: z.string().default(() => uuidv4()),
@@ -40,8 +41,7 @@ const sectionSchema = z.object({
 const formSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.string().min(1, 'Category is required.'),
-  subCategory: z.string().optional(),
+  category: z.array(z.string()).min(1, 'At least one category is required.'),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -81,24 +81,10 @@ const formatDateForInput = (date: Date | string | null | undefined): string => {
     }
 }
 
-// Find parent category for an existing sub-category
-const getParentCategory = (subCategoryValue: string): string | undefined => {
-    for (const [parent, subs] of Object.entries(subCategoryMap)) {
-        if (subs.includes(subCategoryValue)) {
-            return parent;
-        }
-    }
-    return undefined;
-};
-
-
 const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormValues => {
-    const parentCategory = initialData ? getParentCategory(initialData.category) : undefined;
-
     const base = {
       name: '',
-      category: defaultCategory || '',
-      subCategory: '',
+      category: defaultCategory ? [defaultCategory] : [],
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -132,8 +118,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
         return {
             ...base,
             ...initialData,
-            category: parentCategory || initialData.category,
-            subCategory: parentCategory ? initialData.category : '',
+            category: Array.isArray(initialData.category) ? initialData.category : [initialData.category],
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
@@ -141,15 +126,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
             maxAttempts: initialData.maxAttempts || undefined,
         } as FormValues;
     }
-     if (defaultCategory) {
-        const parent = getParentCategory(defaultCategory);
-        if (parent) {
-            base.category = parent;
-            base.subCategory = defaultCategory;
-        } else {
-            base.category = defaultCategory;
-        }
-    }
+    
     return base;
 };
 
@@ -164,17 +141,8 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     defaultValues: getDefaultValues(initialData, defaultCategory),
   });
   
-  const selectedCategory = useWatch({ control: form.control, name: 'category' });
-  const [subCategories, setSubCategories] = useState<string[]>([]);
-  
-  useEffect(() => {
-    if (selectedCategory && subCategoryMap[selectedCategory]) {
-        setSubCategories(subCategoryMap[selectedCategory]);
-    } else {
-        setSubCategories([]);
-        form.setValue('subCategory', ''); // Reset subcategory if main category changes
-    }
-  }, [selectedCategory, form]);
+  const allSubCategoryOptions = Object.values(subCategoryMap).flat().map(c => ({ label: c, value: c }));
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -233,42 +201,26 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                       </FormItem>
                     )}
                 />
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Category</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    {categoryNames.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    {subCategories.length > 0 && (
-                        <FormField
-                            control={form.control}
-                            name="subCategory"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Sub-category</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {subCategories.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
+                 <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Categories / Sub-Categories</FormLabel>
+                        <FormControl>
+                            <MultiSelect
+                                options={allSubCategoryOptions}
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                placeholder="Select categories..."
+                                variant="secondary"
+                            />
+                        </FormControl>
+                        <FormDescription>Select one or more categories for this exam.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
                     )}
-                </div>
+                />
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}

@@ -32,7 +32,7 @@ function ExamList({ category }: { category: string }) {
     async function fetchExams() {
         setIsLoading(true);
         try {
-            const fetchedExams = await getPublishedExams(category);
+            const fetchedExams = await getExams(category);
             setExams(fetchedExams);
         } catch (error) {
             console.error(`Failed to fetch exams for category ${category}:`, error);
@@ -307,5 +307,3 @@ export default function AdminCategoryPage() {
         </div>
     );
 }
-
-    
