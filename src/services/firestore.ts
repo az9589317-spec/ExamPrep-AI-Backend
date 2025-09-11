@@ -53,7 +53,21 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     let q;
     
     if (category) {
-        q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+        const isSubCategory = allSubCategories.includes(category);
+        
+        if (isSubCategory) {
+            // If the provided category is a sub-category (e.g., "SBI"), query for it directly.
+            q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+        } else {
+            // If it's a main category (e.g., "Banking"), query for all its sub-categories.
+            const subCategories = subCategoryMap[category] || [];
+            if (subCategories.length > 0) {
+                 q = query(examsCollection, where('status', '==', 'published'), where('category', 'in', subCategories));
+            } else {
+                 // For categories with no defined sub-categories
+                 q = query(examsCollection, where('status', '==', 'published'), where('category', '==', category));
+            }
+        }
     } else {
         // Query only by status, then sort in code to avoid needing a composite index.
         q = query(examsCollection, where('status', '==', 'published'));

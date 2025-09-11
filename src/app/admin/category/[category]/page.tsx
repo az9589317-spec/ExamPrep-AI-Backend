@@ -5,24 +5,22 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { ArrowLeft, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, PlusCircle, Trash2, Briefcase } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AddExamForm } from "@/components/app/add-exam-form";
 import { getPublishedExams, type Exam } from "@/services/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { deleteExamAction } from "@/app/admin/actions";
+import { subCategories as subCategoryMap } from "@/lib/categories";
 
-
-export default function AdminCategoryPage() {
-    const params = useParams();
-    const category = decodeURIComponent(params.category as string);
+function ExamList({ category }: { category: string }) {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
 
@@ -80,16 +78,10 @@ export default function AdminCategoryPage() {
     }
 
     return (
-        <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin">
-                        <Button variant="outline" size="icon" className="h-7 w-7">
-                            <ArrowLeft className="h-4 w-4" />
-                            <span className="sr-only">Back</span>
-                        </Button>
-                    </Link>
-                    <div className="flex-1">
+                     <div className="flex-1">
                         <h1 className="text-2xl font-bold tracking-tight">
                             <span className="text-muted-foreground">Category: </span>
                             {category}
@@ -218,8 +210,53 @@ export default function AdminCategoryPage() {
                     />
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 }
 
-    
+
+export default function AdminCategoryPage() {
+    const params = useParams();
+    const category = decodeURIComponent(params.category as string);
+    const subCategories = subCategoryMap[category] || [];
+
+    return (
+        <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+            <div className="flex items-center gap-4">
+                <Link href="/admin">
+                    <Button variant="outline" size="icon" className="h-7 w-7">
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Back</span>
+                    </Button>
+                </Link>
+                {subCategories.length > 0 && (
+                     <div className="flex-1">
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            {category} Sub-categories
+                        </h1>
+                        <p className="text-muted-foreground">Select a sub-category to manage its exams.</p>
+                    </div>
+                )}
+            </div>
+
+            {subCategories.length > 0 ? (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {subCategories.map((sub) => (
+                        <Link href={`/admin/category/${encodeURIComponent(sub)}`} key={sub}>
+                             <Card className="hover:shadow-lg transition-shadow duration-300">
+                                <CardHeader>
+                                    <div className="flex items-center gap-4">
+                                        <Briefcase className="h-8 w-8 text-gray-500" />
+                                        <CardTitle className="font-headline">{sub}</CardTitle>
+                                    </div>
+                                </CardHeader>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            ) : (
+                <ExamList category={category} />
+            )}
+        </div>
+    );
+}
