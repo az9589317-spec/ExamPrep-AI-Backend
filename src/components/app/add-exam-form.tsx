@@ -146,7 +146,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
       name: '',
       category: category,
       subCategories: subCategories,
-      year: undefined,
+      year: new Date().getFullYear(),
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -182,7 +182,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
             ...initialData,
             category: category,
             subCategories: subCategories,
-            year: initialData.year || undefined,
+            year: initialData.year || new Date().getFullYear(),
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
@@ -212,6 +212,11 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   const subCategoryOptions = possibleSubCategories.map(sc => ({ label: sc, value: sc }));
 
   const showYearField = selectedSubCategories?.includes('Previous Year Paper');
+  
+  const yearOptions = Array.from({ length: 15 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { label: year.toString(), value: year.toString() };
+  });
 
 
   const { fields, append, remove } = useFieldArray({
@@ -334,10 +339,21 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Year</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="e.g., 2023" {...field} value={field.value ?? ''} />
-                                </FormControl>
-                                <FormDescription>Enter the year for the previous year paper.</FormDescription>
+                                <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a year" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {yearOptions.map(option => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Select the year for this past paper.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -574,4 +590,3 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     </Form>
   );
 }
-
