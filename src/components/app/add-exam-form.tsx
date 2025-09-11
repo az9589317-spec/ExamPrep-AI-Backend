@@ -335,7 +335,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                             <FormItem>
                                 <FormLabel>Year</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="e.g., 2023" {...field} />
+                                    <Input type="number" placeholder="e.g., 2023" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormDescription>Enter the year for the previous year paper.</FormDescription>
                                 <FormMessage />
@@ -409,7 +409,7 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                             </Button>
                             <div className="space-y-4">
                                 <FormField control={form.control} name={`sections.${index}.name`} render={({ field }) => (
-                                    <FormItem><FormLabel>Section Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Section Name</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     <FormField control={form.control} name={`sections.${index}.timeLimit`} render={({ field }) => (
@@ -574,3 +574,4 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     </Form>
   );
 }
+
