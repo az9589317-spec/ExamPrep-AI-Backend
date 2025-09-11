@@ -29,7 +29,8 @@ export interface Section {
 export interface Exam {
   id: string;
   name: string; // Admin defined exam name
-  category: string; // Admin defined category
+  category: string | string[]; // Admin defined category
+  year?: number; // Optional: For previous year papers
   examType: 'Prelims' | 'Mains' | 'Mock Test' | 'Practice' | 'Custom'; // Admin choice
   status: 'published' | 'draft' | 'archived';
   

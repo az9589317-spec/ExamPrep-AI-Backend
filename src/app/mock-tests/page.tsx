@@ -26,9 +26,9 @@ async function AllExamsList() {
             {availableExams.map((exam: Exam) => (
                 <div key={exam.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h3 className="font-medium">{exam.name}</h3>
+                        <h3 className="font-medium">{exam.name} {exam.year ? `(${exam.year})` : ''}</h3>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                            <span>{exam.category}</span>
+                            <span>{Array.isArray(exam.category) ? exam.category.join(', ') : exam.category}</span>
                             <span className='hidden sm:inline'>•</span>
                             <span>{exam.totalQuestions || 0} Questions</span>
                             <span className='hidden sm:inline'>•</span>

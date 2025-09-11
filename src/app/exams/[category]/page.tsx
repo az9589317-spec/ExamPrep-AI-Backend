@@ -31,7 +31,7 @@ async function CategoryExamList({ category }: { category: string }) {
           className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h3 className="font-medium">{exam.name}</h3>
+            <h3 className="font-medium">{exam.name} {exam.year ? `(${exam.year})` : ''}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span>{exam.totalQuestions || 0} Questions</span>
               <span className="hidden sm:inline">•</span>

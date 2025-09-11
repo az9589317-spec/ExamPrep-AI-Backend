@@ -44,6 +44,7 @@ const formSchema = z.object({
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
   category: z.string().min(1, 'A main category is required.'),
   subCategories: z.array(z.string()).optional(),
+  year: z.coerce.number().optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
@@ -108,7 +109,15 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
                 category = parent;
                 subCategories = initialCats.filter(c => subCategoryMap[parent]?.includes(c));
             } else {
-                category = firstCat;
+                // It might be a main category or a sub-category that has been orphaned.
+                // Let's check if the first category is a known main category
+                if(allCategories.some(c => c.name === firstCat)) {
+                  category = firstCat;
+                } else {
+                  // Fallback for orphaned sub-categories
+                  category = '';
+                  subCategories = initialCats;
+                }
             }
         } else if (typeof initialCats === 'string' && initialCats) {
              const parent = getParentCategory(initialCats);
@@ -137,6 +146,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
       name: '',
       category: category,
       subCategories: subCategories,
+      year: undefined,
       examType: 'Mock Test' as const,
       status: 'draft' as const,
       sections: [
@@ -172,6 +182,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
             ...initialData,
             category: category,
             subCategories: subCategories,
+            year: initialData.year || undefined,
             durationMin: initialData.durationMin || 0,
             startTime: formatDateForInput(initialData.startTime as unknown as Date | null),
             endTime: formatDateForInput(initialData.endTime as unknown as Date | null),
@@ -195,8 +206,12 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   });
   
   const selectedCategory = useWatch({ control: form.control, name: "category" });
+  const selectedSubCategories = useWatch({ control: form.control, name: "subCategories" });
+  
   const possibleSubCategories = subCategoryMap[selectedCategory] || [];
   const subCategoryOptions = possibleSubCategories.map(sc => ({ label: sc, value: sc }));
+
+  const showYearField = selectedSubCategories?.includes('Previous Year Paper');
 
 
   const { fields, append, remove } = useFieldArray({
@@ -225,7 +240,10 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
         category: finalCategories,
       };
       
-      // We no longer need subCategories field in the document
+      if (!data.subCategories?.includes('Previous Year Paper')) {
+          delete (dataToSave as any).year;
+      }
+
       delete (dataToSave as any).subCategories;
 
       const result = await addExamAction(dataToSave as any);
@@ -309,6 +327,22 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         />
                     )}
                 </div>
+                {showYearField && (
+                    <FormField
+                        control={form.control}
+                        name="year"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Year</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="e.g., 2023" {...field} />
+                                </FormControl>
+                                <FormDescription>Enter the year for the previous year paper.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -540,4 +574,3 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     </Form>
   );
 }
-
