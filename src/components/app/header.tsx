@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { BrainCircuit, CircleUser, Menu, Search, MoreVertical, LogIn, LogOut } from 'lucide-react';
@@ -124,6 +125,9 @@ export default function Header() {
                     <Link href="/mock-tests">Mock Tests</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                    <Link href="/previous-year-papers">Previous Year Papers</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/analytics">Analytics</Link>
                 </DropdownMenuItem>
             </DropdownMenuContent>
@@ -180,6 +184,12 @@ export default function Header() {
                     className="text-muted-foreground hover:text-foreground"
                     >
                     Mock Tests
+                    </Link>
+                    <Link
+                    href="/previous-year-papers"
+                    className="text-muted-foreground hover:text-foreground"
+                    >
+                    Previous Year Papers
                     </Link>
                     <Link
                     href="/analytics"

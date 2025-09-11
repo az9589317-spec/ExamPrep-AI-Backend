@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import Header from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +37,10 @@ export default async function UpscPage() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {upscSubCategories.map((subCategory) => (
-            <Link href={`/exams/${encodeURIComponent(subCategory.category)}`} key={subCategory.name}>
+            <Link 
+              href={subCategory.name === 'Previous Year Paper' ? '/previous-year-papers' : `/exams/${encodeURIComponent(subCategory.category)}`}
+              key={subCategory.name}
+            >
               <Card className="flex flex-col justify-between h-full hover:bg-card/70 transition-all duration-300 shadow-glow-br hover:shadow-glow-tl">
                 <CardHeader>
                   <div className="flex items-center gap-4">
