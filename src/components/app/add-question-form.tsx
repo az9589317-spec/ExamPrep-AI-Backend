@@ -136,7 +136,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
   useEffect(() => {
     if (!exam) return;
 
-    let defaultValues: Partial<FormValues>;
+    let defaultValues: FormValues;
 
     if (initialData) {
         // We are editing an existing question
@@ -145,18 +145,19 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             examId: exam.id,
             questionId: initialData.id,
             subject: initialData.subject || exam.sections?.[0]?.name || "",
-        };
-
-        if (initialData.questionType === 'Standard') {
-            defaultValues.options = initialData.options?.map(o => ({ text: o.text || '' })) || [{ text: "" }, { text: "" }];
-            defaultValues.marks = initialData.marks || 1;
-        } else if (initialData.questionType === 'Reading Comprehension') {
-            defaultValues.subQuestions = initialData.subQuestions?.map(sq => ({
+            options: initialData.options?.map(o => ({ text: o.text || '' })) || [{ text: "" }, { text: "" }],
+            marks: initialData.marks || 1,
+            subQuestions: initialData.subQuestions?.map(sq => ({
                 ...sq,
                 options: sq.options?.map(opt => ({ text: opt.text || '' })) || [{ text: "" }, { text: "" }],
                 marks: sq.marks || 1,
-            })) || [];
-        }
+            })) || [],
+            topic: initialData.topic || "",
+            difficulty: initialData.difficulty || "medium",
+            explanation: initialData.explanation || "",
+            passage: initialData.passage || "",
+            questionText: initialData.questionText || "",
+        };
     } else {
         // We are creating a new question
         defaultValues = {
@@ -175,7 +176,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             questionId: undefined,
         };
     }
-    form.reset(defaultValues as FormValues);
+    form.reset(defaultValues);
 
   }, [initialData, exam, form, defaultSection]);
   
@@ -622,7 +623,3 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
-
-    
-
-    

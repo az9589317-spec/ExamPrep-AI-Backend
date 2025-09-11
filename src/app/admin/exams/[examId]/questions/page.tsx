@@ -183,15 +183,18 @@ export default function ExamQuestionsPage() {
   };
 
   const openEditDialog = (question: Question) => {
-    setSelectedQuestion(question);
     setDefaultSection(undefined);
+    setSelectedQuestion(question);
     setIsDialogOpen(true);
   };
 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      fetchExamAndQuestions();
+      // Delay fetching to allow animation to complete and avoid flashing
+      setTimeout(() => {
+        fetchExamAndQuestions();
+      }, 200);
     }
   }
 
@@ -296,7 +299,7 @@ export default function ExamQuestionsPage() {
               </DialogHeader>
               <ScrollArea className="h-[80vh] pr-6">
                 <AddQuestionForm 
-                    key={selectedQuestion?.id || 'new'}
+                    key={selectedQuestion?.id || `new-${defaultSection}`}
                     exam={exam} 
                     initialData={selectedQuestion}
                     defaultSection={defaultSection}
@@ -308,5 +311,3 @@ export default function ExamQuestionsPage() {
     </div>
   );
 }
-
-    
