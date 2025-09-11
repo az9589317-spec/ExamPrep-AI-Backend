@@ -24,19 +24,29 @@ function SectionQuestions({
     questions, 
     onEdit, 
     onDelete,
+    onAdd,
     isPending
 }: { 
     section: Section, 
     questions: Question[], 
     onEdit: (question: Question) => void, 
     onDelete: (questionId: string) => void,
+    onAdd: (sectionName: string) => void,
     isPending: boolean
 }) {
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>{section.name}</CardTitle>
-                <CardDescription>{questions.length} questions in this section.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>{section.name}</CardTitle>
+                    <CardDescription>{questions.length} questions in this section.</CardDescription>
+                </div>
+                <Button size="sm" className="h-8 gap-1" onClick={() => onAdd(section.name)}>
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      Add Question
+                  </span>
+                </Button>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -141,6 +151,7 @@ export default function ExamQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | undefined>(undefined);
+  const [defaultSection, setDefaultSection] = useState<string | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const fetchExamAndQuestions = async () => {
@@ -165,20 +176,21 @@ export default function ExamQuestionsPage() {
     fetchExamAndQuestions();
   }, [examId, toast]);
 
-  const openAddDialog = () => {
+  const openAddDialog = (sectionName: string) => {
     setSelectedQuestion(undefined);
+    setDefaultSection(sectionName);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (question: Question) => {
     setSelectedQuestion(question);
+    setDefaultSection(undefined);
     setIsDialogOpen(true);
   };
 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      // Re-fetch questions when dialog closes to see updates
       fetchExamAndQuestions();
     }
   }
@@ -188,7 +200,7 @@ export default function ExamQuestionsPage() {
         const result = await deleteQuestionAction({ examId, questionId });
         if (result.success) {
             toast({ title: "Success", description: result.message });
-            fetchExamAndQuestions(); // Refresh data
+            fetchExamAndQuestions();
         } else {
             toast({ variant: "destructive", title: "Error", description: result.message });
         }
@@ -254,14 +266,6 @@ export default function ExamQuestionsPage() {
                 <p className="text-muted-foreground">For exam: <span className="font-semibold">{exam.name}</span></p>
                 </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
-                <Button size="sm" className="h-8 gap-1" onClick={openAddDialog}>
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      Add Question
-                  </span>
-                </Button>
-            </div>
         </div>
 
         <div className="grid gap-8">
@@ -274,6 +278,7 @@ export default function ExamQuestionsPage() {
                         questions={sectionQuestions}
                         onEdit={openEditDialog}
                         onDelete={handleDeleteQuestion}
+                        onAdd={openAddDialog}
                         isPending={isPending}
                     />
                 )
@@ -294,6 +299,7 @@ export default function ExamQuestionsPage() {
                     key={selectedQuestion?.id || 'new'}
                     exam={exam} 
                     initialData={selectedQuestion}
+                    defaultSection={defaultSection}
                     onFinished={() => handleDialogChange(false)}
                 />
               </ScrollArea>

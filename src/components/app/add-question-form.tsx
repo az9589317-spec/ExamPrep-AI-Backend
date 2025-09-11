@@ -118,10 +118,11 @@ type FormValues = z.infer<typeof addQuestionSchema>;
 interface AddQuestionFormProps {
     exam: Exam | null;
     initialData?: Question;
+    defaultSection?: string;
     onFinished: () => void;
 }
 
-export function AddQuestionForm({ exam, initialData, onFinished }: AddQuestionFormProps) {
+export function AddQuestionForm({ exam, initialData, defaultSection, onFinished }: AddQuestionFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [aiInput, setAiInput] = useState("");
@@ -130,12 +131,6 @@ export function AddQuestionForm({ exam, initialData, onFinished }: AddQuestionFo
 
   const form = useForm<FormValues>({
     resolver: zodResolver(addQuestionSchema),
-    defaultValues: {
-        questionType: 'Standard',
-        options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
-        difficulty: "medium",
-        marks: 1,
-    }
   });
 
   useEffect(() => {
@@ -152,7 +147,6 @@ export function AddQuestionForm({ exam, initialData, onFinished }: AddQuestionFo
             subject: initialData.subject || exam.sections?.[0]?.name || "",
         };
 
-        // Handle specific question types
         if (initialData.questionType === 'Standard') {
             defaultValues.options = initialData.options?.map(o => ({ text: o.text || '' })) || [{ text: "" }, { text: "" }];
             defaultValues.marks = initialData.marks || 1;
@@ -172,7 +166,7 @@ export function AddQuestionForm({ exam, initialData, onFinished }: AddQuestionFo
             correctOptionIndex: undefined,
             passage: "",
             subQuestions: [],
-            subject: exam.sections?.[0]?.name || "",
+            subject: defaultSection || exam.sections?.[0]?.name || "",
             topic: "",
             difficulty: "medium",
             explanation: "",
@@ -183,7 +177,7 @@ export function AddQuestionForm({ exam, initialData, onFinished }: AddQuestionFo
     }
     form.reset(defaultValues as FormValues);
 
-  }, [initialData, exam, form]);
+  }, [initialData, exam, form, defaultSection]);
   
   const questionType = useWatch({ control: form.control, name: 'questionType' });
 
@@ -628,5 +622,3 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
-
-    
