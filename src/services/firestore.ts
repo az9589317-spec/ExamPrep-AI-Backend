@@ -1,7 +1,3 @@
-
-
-
-
 // src/services/firestore.ts
 'use server';
 
@@ -292,4 +288,75 @@ export async function getNotifications(): Promise<Notification[]> {
   const snapshot = await getDocs(q);
   const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
   return JSON.parse(JSON.stringify(notifications));
+}
+
+export type LeaderboardEntry = {
+    rank: number;
+    user: UserProfile;
+    highestScore: number;
+    highestScorePercent: number;
+    examsTaken: number;
+};
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+    const [resultsSnapshot, usersSnapshot] = await Promise.all([
+        getDocs(collection(db, 'results')),
+        getDocs(collection(db, 'users')),
+    ]);
+
+    const allResults = resultsSnapshot.docs.map(doc => doc.data() as ExamResult);
+    const allUsers = usersSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data() as Omit<UserProfile, 'id' | 'registrationDate'>;
+        return acc;
+    }, {} as Record<string, Omit<UserProfile, 'id' | 'registrationDate'>>);
+    
+
+    const userScores = allResults.reduce((acc, result) => {
+        if (!result.userId || result.isDisqualified) return acc;
+        
+        const existing = acc[result.userId] || { highestScore: 0, examsTaken: 0, maxScore: 0 };
+        
+        const scorePercent = (result.score / result.maxScore) * 100;
+
+        if (scorePercent > existing.highestScore) {
+            existing.highestScore = scorePercent;
+        }
+
+        existing.examsTaken += 1;
+        acc[result.userId] = existing;
+
+        return acc;
+    }, {} as Record<string, { highestScore: number, examsTaken: number, maxScore: number }>);
+    
+    let leaderboard = Object.keys(userScores)
+        .map(userId => {
+            const userData = allUsers[userId];
+            if (!userData) return null;
+
+            return {
+                user: {
+                    id: userId,
+                    name: userData.name,
+                    email: userData.email,
+                    photoURL: userData.photoURL,
+                    status: userData.status,
+                    role: userData.role,
+                    registrationDate: '',
+                },
+                highestScorePercent: userScores[userId].highestScore,
+                examsTaken: userScores[userId].examsTaken,
+            };
+        })
+        .filter(Boolean) as (Omit<LeaderboardEntry, 'rank' | 'highestScore'> & { highestScorePercent: number })[];
+        
+
+    leaderboard.sort((a, b) => b.highestScorePercent - a.highestScorePercent);
+
+    const rankedLeaderboard = leaderboard.map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+        highestScore: parseFloat(entry.highestScorePercent.toFixed(2)),
+    }));
+
+    return JSON.parse(JSON.stringify(rankedLeaderboard));
 }
