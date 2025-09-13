@@ -425,24 +425,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         </FormItem>
                     )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
-                            </FormLabel>
-                            <FormControl>
-                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
-                            </FormControl>
-                             <FormDescription>
-                                Add a URL for a diagram or chart if the question needs it.
-                            </FormDescription>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                     
                     <FormItem>
                     <div className="mb-4">
@@ -526,25 +508,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                 <Textarea placeholder="Enter the full passage here..." {...field} value={field.value || ''} rows={10} />
                             </FormControl>
                             <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    
-                    <FormField
-                        control={form.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                    <ImageIcon className="h-4 w-4" /> Image URL (Optional)
-                                </FormLabel>
-                                <FormControl>
-                                    <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormDescription>
-                                    Add a URL for an image to accompany the passage.
-                                </FormDescription>
-                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -697,6 +660,24 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         </FormItem>
                     )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                        <FormItem className="md:col-span-4">
+                        <FormLabel className="flex items-center gap-2">
+                            <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                        </FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                        </FormControl>
+                            <FormDescription>
+                            Add a URL for a diagram or chart if the explanation needs it.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </CardContent>
         </Card>
 
@@ -780,5 +761,3 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
-
-    
