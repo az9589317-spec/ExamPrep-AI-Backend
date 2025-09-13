@@ -1,10 +1,8 @@
 
-
-
 'use client';
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { ArrowLeft, MoreHorizontal, PlusCircle, Trash2, Briefcase, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +21,7 @@ import { subCategories as subCategoryMap, allCategories } from "@/lib/categories
 
 function ExamList({ category }: { category: string }) {
     const { toast } = useToast();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
     const [exams, setExams] = useState<Exam[]>([]);
@@ -124,11 +123,13 @@ function ExamList({ category }: { category: string }) {
                                 ))
                             ) : exams.length > 0 ? (
                                 exams.map((exam) => (
-                                    <TableRow key={exam.id} className="group hover:bg-muted/50">
+                                    <TableRow 
+                                        key={exam.id} 
+                                        className="group hover:bg-muted/50 cursor-pointer"
+                                        onClick={() => router.push(`/admin/exams/${exam.id}/questions`)}
+                                    >
                                         <TableCell className="font-medium">
-                                            <Link href={`/admin/exams/${exam.id}/questions`} className="block hover:underline">
-                                                {exam.name}
-                                            </Link>
+                                            {exam.name}
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
@@ -136,7 +137,7 @@ function ExamList({ category }: { category: string }) {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell">{exam.totalQuestions || 0}</TableCell>
-                                        <TableCell>
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -308,3 +309,5 @@ export default function AdminCategoryPage() {
         </div>
     );
 }
+
+    
