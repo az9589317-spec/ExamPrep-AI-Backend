@@ -7,6 +7,7 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -599,6 +600,7 @@ export async function updateUserStatusAction({ userId, status }: { userId: strin
 }
 
 const sendNotificationSchema = z.object({
+  id: z.string().optional(),
   title: z.string().min(3, "Title must be at least 3 characters long."),
   description: z.string().min(10, "Description must be at least 10 characters long."),
   link: z.string().url().optional().or(z.literal('')),
@@ -615,25 +617,37 @@ export async function sendNotificationAction(data: z.infer<typeof sendNotificati
     };
   }
   
+  const { id, ...notificationData } = validatedFields.data;
+
   try {
     const notificationsCollection = collection(db, 'notifications');
-    await addDoc(notificationsCollection, {
-      ...validatedFields.data,
-      isRead: false,
-      createdAt: serverTimestamp(),
-      type: 'broadcast',
-    });
+    if (id) {
+        // Editing existing notification
+        const notificationRef = doc(notificationsCollection, id);
+        await updateDoc(notificationRef, {
+            ...notificationData,
+            updatedAt: serverTimestamp(),
+        });
+    } else {
+        // Creating new notification
+        await addDoc(notificationsCollection, {
+            ...notificationData,
+            isRead: false,
+            createdAt: serverTimestamp(),
+            type: 'broadcast',
+        });
+    }
 
     revalidatePath('/admin/notifications');
 
     return {
-      message: `Notification "${validatedFields.data.title}" sent successfully!`,
+      message: `Notification "${validatedFields.data.title}" ${id ? 'updated' : 'sent'} successfully!`,
       errors: {},
     };
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error("Error sending/updating notification:", error);
     return {
-      message: 'Failed to send notification. Please try again.',
+      message: `Failed to ${id ? 'update' : 'send'} notification. Please try again.`,
       errors: { _form: ['An unexpected error occurred.'] },
     };
   }
@@ -663,4 +677,21 @@ export async function markNotificationsAsReadAction(notificationIds: string[]) {
     }
 }
 
+
+export async function deleteNotificationAction({ notificationId }: { notificationId: string }) {
+    if (!notificationId) {
+        return { success: false, message: 'Invalid Notification ID provided.' };
+    }
+
+    try {
+        const notificationRef = doc(db, 'notifications', notificationId);
+        await deleteDoc(notificationRef);
+
+        revalidatePath('/admin/notifications');
+        return { success: true, message: 'Notification deleted successfully.' };
+    } catch (error) {
+        console.error("Error deleting notification:", error);
+        return { success: false, message: 'Failed to delete notification.' };
+    }
+}
     
