@@ -513,28 +513,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
              <CardContent className="grid grid-cols-1 gap-8 md:grid-cols-4">
                 <FormField
                     control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                        <FormLabel>Section (Subject)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select a section" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {exam.sections.map(section => (
-                                    <SelectItem key={section.id || section.name} value={section.name}>{section.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
                     name="topic"
                     render={({ field }) => (
                     <FormItem className="md:col-span-2">
@@ -680,3 +658,5 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
+
+    
