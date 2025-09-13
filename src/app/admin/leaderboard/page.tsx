@@ -47,7 +47,7 @@ function TopThree({ top3 }: { top3: LeaderboardEntry[] }) {
 
 export default async function AdminLeaderboardPage() {
     const leaderboardData = await getLeaderboard();
-    const top3 = leaderboardData.slice(0, 3);
+    const top3 = leaderboardData.filter(e => e.rank !== null && e.rank <= 3);
 
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -79,7 +79,7 @@ export default async function AdminLeaderboardPage() {
                             {leaderboardData.map((entry) => (
                                 <TableRow key={entry.user.id}>
                                     <TableCell className="font-bold text-lg text-muted-foreground">
-                                        #{entry.rank}
+                                        {entry.rank ? `#${entry.rank}` : 'Unranked'}
                                     </TableCell>
                                     <TableCell>
                                          <Link href={`/admin/users/${entry.user.id}`} className="flex items-center gap-3 group">
@@ -93,7 +93,7 @@ export default async function AdminLeaderboardPage() {
                                             </div>
                                         </Link>
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold text-primary">{entry.highestScore}%</TableCell>
+                                    <TableCell className="text-right font-semibold text-primary">{entry.highestScore > 0 ? `${entry.highestScore}%` : '-'}</TableCell>
                                     <TableCell className="text-right hidden sm:table-cell text-muted-foreground">{entry.examsTaken}</TableCell>
                                 </TableRow>
                             ))}
@@ -114,3 +114,4 @@ export default async function AdminLeaderboardPage() {
         </div>
     );
 }
+

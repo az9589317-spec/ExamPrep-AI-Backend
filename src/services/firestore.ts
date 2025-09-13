@@ -291,7 +291,7 @@ export async function getNotifications(): Promise<Notification[]> {
 }
 
 export type LeaderboardEntry = {
-    rank: number;
+    rank: number | null;
     user: UserProfile;
     highestScore: number;
     examsTaken: number;
@@ -338,20 +338,45 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     }, {} as Record<string, { highestScore: number; examsTaken: number; }>);
     
 
-    const leaderboard = Object.keys(userStats)
-        .map(userId => ({
+    const leaderboard = Object.keys(allUsers).map(userId => {
+        const stats = userStats[userId];
+        return {
             user: allUsers[userId],
-            highestScore: userStats[userId].highestScore,
-            examsTaken: userStats[userId].examsTaken,
-        }))
-        .filter(entry => entry.user);
+            highestScore: stats ? stats.highestScore : 0,
+            examsTaken: stats ? stats.examsTaken : 0,
+        };
+    });
 
-    leaderboard.sort((a, b) => b.highestScore - a.highestScore);
+    leaderboard.sort((a, b) => {
+        if (b.highestScore !== a.highestScore) {
+            return b.highestScore - a.highestScore;
+        }
+        return b.examsTaken - a.examsTaken;
+    });
 
-    return JSON.parse(JSON.stringify(leaderboard.map((entry, index) => ({
-        rank: index + 1,
-        user: entry.user,
-        highestScore: parseFloat(entry.highestScore.toFixed(2)),
-        examsTaken: entry.examsTaken,
-    }))));
+    let rank = 1;
+    return JSON.parse(JSON.stringify(leaderboard.map((entry, index) => {
+        // Assign rank only if the user has a score.
+        // Also, handle ties in score by assigning the same rank.
+        if (index > 0 && entry.highestScore < leaderboard[index - 1].highestScore) {
+            rank = index + 1;
+        }
+        
+        if (entry.highestScore === 0 && entry.examsTaken === 0) {
+            return {
+                rank: null,
+                user: entry.user,
+                highestScore: 0,
+                examsTaken: 0,
+            };
+        }
+
+        return {
+            rank: rank,
+            user: entry.user,
+            highestScore: parseFloat(entry.highestScore.toFixed(2)),
+            examsTaken: entry.examsTaken,
+        };
+    })));
 }
+
