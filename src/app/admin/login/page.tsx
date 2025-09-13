@@ -11,6 +11,7 @@ import { signInWithGoogle } from '@/services/auth';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
 import { createUserIfNotExists } from '@/services/user';
+import { isAdminUser } from '@/lib/auth-config';
 
 export default function AdminLoginPage() {
     const { user, isLoading } = useAuth();
@@ -19,7 +20,11 @@ export default function AdminLoginPage() {
 
     useEffect(() => {
         if (!isLoading && user) {
-            router.push('/admin');
+            if (isAdminUser(user.email)) {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
         }
     }, [user, isLoading, router]);
 
@@ -33,7 +38,11 @@ export default function AdminLoginPage() {
                 title: "Login Successful",
                 description: `Welcome back, ${user.displayName}!`,
             });
-            router.push('/admin');
+            if (isAdminUser(user.email)) {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
         } else {
             toast({
                 variant: "destructive",
@@ -50,9 +59,9 @@ export default function AdminLoginPage() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
+        <CardTitle className="text-2xl font-headline">Login</CardTitle>
         <CardDescription>
-          Please sign in with Google to access the admin panel.
+          Please sign in with Google to continue.
         </CardDescription>
       </CardHeader>
       <CardContent>
