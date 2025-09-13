@@ -3,14 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublishedExams } from "@/services/firestore";
 import Link from "next/link";
-import { AppHeader } from "@/components/app/app-header";
 
 export default async function Home() {
     const exams = await getPublishedExams();
 
     return (
         <div className="flex flex-col min-h-screen">
-            <AppHeader />
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-7xl mx-auto">
                     <h1 className="text-3xl font-bold tracking-tight mb-4">Available Exams</h1>

@@ -8,7 +8,6 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/app/auth-provider";
 import { isAdminUser } from "@/lib/auth-config";
-import { AppHeader } from "@/components/app/app-header";
 
 export default function AdminLayout({
   children,
@@ -66,7 +65,6 @@ export default function AdminLayout({
   if (pathname === '/admin/login') {
     return (
         <div className="flex flex-col min-h-screen">
-            <AppHeader />
             <div className="flex flex-1 items-center justify-center bg-muted/40">
                 {children}
             </div>
@@ -80,7 +78,6 @@ export default function AdminLayout({
         <SidebarProvider>
             <AdminSidebar />
             <SidebarInset>
-                <AppHeader />
                 <main className="flex-1 p-4 md:p-8 overflow-y-auto">
                     {children}
                 </main>

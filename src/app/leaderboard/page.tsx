@@ -1,5 +1,4 @@
 // src/app/leaderboard/page.tsx
-import { AppHeader } from "@/components/app/app-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +52,6 @@ export default async function LeaderboardPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-muted/20">
-            <AppHeader />
             <main className="flex-1 p-4 md:p-8">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-12">
