@@ -64,7 +64,7 @@ export default async function AdminLeaderboardPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>All Ranks</CardTitle>
+                    <CardTitle>saab user dkhou yeha</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
