@@ -48,7 +48,6 @@ function TopThree({ top3 }: { top3: LeaderboardEntry[] }) {
 export default async function AdminLeaderboardPage() {
     const leaderboardData = await getLeaderboard();
     const top3 = leaderboardData.slice(0, 3);
-    const rest = leaderboardData.slice(3);
 
     return (
         <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -77,7 +76,7 @@ export default async function AdminLeaderboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {rest.map((entry) => (
+                            {leaderboardData.map((entry) => (
                                 <TableRow key={entry.user.id}>
                                     <TableCell className="font-bold text-lg text-muted-foreground">
                                         #{entry.rank}
