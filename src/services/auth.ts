@@ -1,3 +1,4 @@
+
 // src/services/auth.ts
 import { 
   GoogleAuthProvider, 
@@ -18,7 +19,7 @@ export async function signInWithGoogle(): Promise<SignInResult> {
     const result = await signInWithPopup(auth, provider);
     return { user: result.user, isCancelled: false };
   } catch (error: any) {
-    if (error.code === 'auth/popup-closed-by-user') {
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
       // This is an expected user action, not an error.
       return { user: null, isCancelled: true };
     }
