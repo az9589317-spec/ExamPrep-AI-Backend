@@ -32,6 +32,7 @@ export interface Exam {
   category: string | string[]; // Admin defined category
   year?: number; // Optional: For previous year papers
   examType: 'Prelims' | 'Mains' | 'Mock Test' | 'Practice' | 'Custom'; // Admin choice
+  mockType?: 'Full' | 'Sectional';
   status: 'published' | 'draft' | 'archived';
   
   // Flexible section structure - Admin controls everything

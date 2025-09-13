@@ -34,6 +34,7 @@ const addExamSchema = z.object({
   category: z.union([z.string(), z.array(z.string())]).refine(val => (Array.isArray(val) && val.length > 0) || (typeof val === 'string' && val.length > 0), { message: 'A category is required.'}),
   year: z.coerce.number().optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
+  mockType: z.enum(['Full', 'Sectional']).optional(),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
   durationMin: z.coerce.number().min(1, "Total duration must be at least 1 minute."),

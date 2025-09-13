@@ -46,6 +46,7 @@ const formSchema = z.object({
   subCategories: z.array(z.string()).optional(),
   year: z.coerce.number().optional(),
   examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
+  mockType: z.enum(['Full', 'Sectional']).optional(),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
   durationMin: z.coerce.number().min(1, "Total duration must be at least 1 minute."),
@@ -148,6 +149,7 @@ const getDefaultValues = (initialData?: Exam, defaultCategory?: string): FormVal
       subCategories: subCategories,
       year: new Date().getFullYear(),
       examType: 'Mock Test' as const,
+      mockType: 'Full' as const,
       status: 'draft' as const,
       sections: [
         { id: uuidv4(), name: 'Quantitative Aptitude', negativeMarking: true, negativeMarkValue: 0.25, timeLimit: 20, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false, instructions: '' },
@@ -207,7 +209,8 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
   
   const selectedCategory = useWatch({ control: form.control, name: "category" });
   const selectedSubCategories = useWatch({ control: form.control, name: "subCategories" });
-  
+  const selectedExamType = useWatch({ control: form.control, name: "examType" });
+
   const possibleSubCategories = subCategoryMap[selectedCategory] || [];
   const subCategoryOptions = possibleSubCategories.map(sc => ({ label: sc, value: sc }));
 
@@ -240,13 +243,17 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
     startTransition(async () => {
       const finalCategories = (data.subCategories && data.subCategories.length > 0) ? data.subCategories : [data.category];
 
-      const dataToSave = {
+      const dataToSave: any = {
         ...data,
         category: finalCategories,
       };
       
       if (!data.subCategories?.includes('Previous Year Paper')) {
           delete (dataToSave as any).year;
+      }
+      
+      if (data.examType !== 'Mock Test') {
+        delete dataToSave.mockType;
       }
 
       delete (dataToSave as any).subCategories;
@@ -380,25 +387,44 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
+                    {selectedExamType === 'Mock Test' && (
+                        <FormField
+                            control={form.control}
+                            name="mockType"
+                            render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <FormLabel>Mock Test Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select mock type" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                <SelectItem value="published">Published</SelectItem>
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="archived">Archived</SelectItem>
+                                    <SelectItem value="Full">Full Mock</SelectItem>
+                                    <SelectItem value="Sectional">Sectional Mock</SelectItem>
                                 </SelectContent>
-                            </Select>
-                            <FormMessage />
+                                </Select>
+                                <FormMessage />
                             </FormItem>
-                        )}
-                    />
+                            )}
+                        />
+                    )}
                  </div>
+                 <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                            <SelectItem value="published">Published</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
               </CardContent>
             </Card>
             
