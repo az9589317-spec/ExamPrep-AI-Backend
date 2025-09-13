@@ -1,6 +1,6 @@
 
 
-import { BookCopy, Briefcase, TramFront, Users, Landmark, Atom, Stethoscope, LineChart, Gavel } from "lucide-react";
+import { BookCopy, Briefcase, TramFront, Users, Landmark, Atom, Stethoscope, LineChart, Gavel, Shield } from "lucide-react";
 import React from "react";
 
 export interface Category {
@@ -51,6 +51,11 @@ export const allCategories: Category[] = [
         description: 'Pursue a degree in law from National Law Universities.'
     },
     {
+        name: 'Insurance',
+        icon: <Shield className="h-8 w-8 text-primary" />,
+        description: 'Prepare for LIC, NIACL, and other insurance sector exams.',
+    },
+    {
         name: 'Daily Quiz',
         icon: <BookCopy className="h-8 w-8 text-primary" />,
         description: 'Test your knowledge with quick daily quizzes on various subjects.'
@@ -69,6 +74,7 @@ export const subCategories: Record<string, string[]> = {
     UPSC: ['CSE', 'NDA', 'CDS', 'Previous Year Paper'],
     JEE: ['Main', 'Advanced', 'Previous Year Paper'],
     NEET: ['UG', 'PG', 'Previous Year Paper'],
+    Insurance: ['LIC', 'NIACL', 'UIIC', 'Previous Year Paper'],
 };
 
 export const allSubCategories = Object.values(subCategories).flat();
