@@ -34,16 +34,16 @@ export default function AdminSidebar() {
 
     return (
         <Sidebar>
+            <SidebarHeader>
+                <div className="flex items-center justify-between">
+                    <Link href="/admin" className="flex items-center gap-2 whitespace-nowrap">
+                        <BrainCircuit className="h-6 w-6 text-primary" />
+                        <span className="font-headline text-xl">ExamPrep AI</span>
+                    </Link>
+                    <SidebarTrigger className="md:hidden"/>
+                </div>
+            </SidebarHeader>
             <SidebarContent>
-                <SidebarHeader>
-                    <div className="flex items-center justify-between">
-                        <Link href="/admin" className="flex items-center gap-2 whitespace-nowrap">
-                            <BrainCircuit className="h-6 w-6 text-primary" />
-                            <span className="font-headline text-xl">ExamPrep AI</span>
-                        </Link>
-                        <SidebarTrigger className="md:hidden"/>
-                    </div>
-                </SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <Link href="/admin">
