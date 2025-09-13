@@ -28,6 +28,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const { toast } = useToast();
 
   const fetchNotifications = useCallback(async () => {
+    // This function can be kept for manual refetching if needed elsewhere,
+    // but the primary update mechanism will be the snapshot listener.
     setIsLoading(true);
     try {
       const fetchedNotifications = await getNotifications();
@@ -51,6 +53,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        // Firestore timestamps need to be serialized for client components
         setNotifications(JSON.parse(JSON.stringify(fetchedNotifications)));
         setIsLoading(false);
     }, (error) => {
@@ -63,6 +66,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         setIsLoading(false);
     });
 
+    // Cleanup subscription on component unmount
     return () => unsubscribe();
   }, [toast]);
 
