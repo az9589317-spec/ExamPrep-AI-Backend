@@ -64,7 +64,7 @@ export default async function AdminLeaderboardPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>All Ranks</CardTitle>
+                    <CardTitle>yeha koie v kuch v show nhi kr rha hai fixed it</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>

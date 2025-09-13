@@ -298,10 +298,9 @@ export type LeaderboardEntry = {
 };
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const [resultsSnapshot, usersSnapshot, examsSnapshot] = await Promise.all([
+    const [resultsSnapshot, usersSnapshot] = await Promise.all([
         getDocs(collection(db, 'results')),
         getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'exams')),
     ]);
 
     const allUsers = usersSnapshot.docs.reduce((acc, doc) => {
@@ -318,35 +317,17 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
         return acc;
     }, {} as Record<string, UserProfile>);
 
-    const allExams = examsSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data() as Exam;
-        return acc;
-    }, {} as Record<string, Exam>);
-
     const userStats = resultsSnapshot.docs.reduce((acc, resultDoc) => {
         const result = resultDoc.data() as ExamResult;
-        if (!result.userId || result.isDisqualified || !allUsers[result.userId]) {
+        if (!result.userId || result.isDisqualified || !allUsers[result.userId] || !result.maxScore) {
             return acc;
         }
-        
-        const exam = allExams[result.examId];
-        let score = result.score; // Use the stored score if available
 
-        if (exam) {
-            // If exam data is available, recalculate score based on (Correct * Marks) - (Wrong * Penalty)
-            // This assumes a simple marks system; a real app would need to be more robust.
-            // A more robust system would calculate this on result submission and store it.
-            const marksPerQuestion = exam.totalMarks / exam.totalQuestions || 1;
-            const negativeMarkValue = exam.sections[0]?.negativeMarkValue ?? 0;
-            score = (result.correctAnswers * marksPerQuestion) - (result.incorrectAnswers * negativeMarkValue);
-        }
-
-        const existing = acc[result.userId] || { totalPoints: 0, examsTaken: 0, highestScore: 0 };
-        
-        existing.totalPoints += score;
-        existing.examsTaken += 1;
+        const existing = acc[result.userId] || { highestScore: 0, examsTaken: 0 };
         
         const currentPercentage = (result.score / result.maxScore) * 100;
+        
+        existing.examsTaken += 1;
         if (currentPercentage > existing.highestScore) {
             existing.highestScore = currentPercentage;
         }
@@ -354,24 +335,23 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
         acc[result.userId] = existing;
 
         return acc;
-    }, {} as Record<string, { totalPoints: number; examsTaken: number; highestScore: number }>);
+    }, {} as Record<string, { highestScore: number; examsTaken: number; }>);
     
 
     const leaderboard = Object.keys(userStats)
         .map(userId => ({
             user: allUsers[userId],
-            totalPoints: userStats[userId].totalPoints,
+            highestScore: userStats[userId].highestScore,
             examsTaken: userStats[userId].examsTaken,
-            highestScore: userStats[userId].highestScore, // Use this for display, but rank by totalPoints
         }))
-        .filter(entry => entry.user); // Filter out entries where user data might be missing
+        .filter(entry => entry.user);
 
-    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+    leaderboard.sort((a, b) => b.highestScore - a.highestScore);
 
     return JSON.parse(JSON.stringify(leaderboard.map((entry, index) => ({
         rank: index + 1,
         user: entry.user,
-        highestScore: parseFloat(entry.totalPoints.toFixed(2)), // Display total points as the main score
+        highestScore: parseFloat(entry.highestScore.toFixed(2)),
         examsTaken: entry.examsTaken,
     }))));
 }
