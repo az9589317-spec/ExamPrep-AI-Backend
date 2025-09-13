@@ -1,7 +1,9 @@
+
 'use client';
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuItem,
@@ -9,12 +11,23 @@ import {
     SidebarTrigger,
   } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { BrainCircuit, LayoutDashboard, Users } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from './auth-provider';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Button } from '../ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { signOut } from '@/services/auth';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
+    const { user } = useAuth();
     const isActive = (path: string) => pathname === path || (path !== '/admin' && pathname.startsWith(path));
+
+    const handleLogout = async () => {
+        await signOut();
+        // The layout's useEffect will handle the redirect to /admin/login
+    };
 
     return (
         <Sidebar>
@@ -47,6 +60,34 @@ export default function AdminSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarContent>
+
+            <SidebarFooter>
+                {user && (
+                    <div className="flex items-center gap-2 p-2">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'user'} />
+                            <AvatarFallback>{user.displayName?.charAt(0) ?? 'A'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 overflow-hidden">
+                            <p className="truncate text-sm font-semibold">{user.displayName}</p>
+                            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="top" align="end" className="w-48">
+                                <DropdownMenuItem onClick={handleLogout}>
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Log out</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )}
+            </SidebarFooter>
         </Sidebar>
     )
 }
