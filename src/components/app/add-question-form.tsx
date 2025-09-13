@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, Loader2, Sparkles } from "lucide-react";
+import { PlusCircle, Trash2, Loader2, Sparkles, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addQuestionAction, parseQuestionAction, parseAndSaveQuestionsAction } from "@/app/admin/actions";
 import { Separator } from "../ui/separator";
@@ -53,6 +53,7 @@ const addQuestionSchema = z.object({
   // Fields that depend on questionType
   marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional(),
   questionText: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   options: z.array(z.object({ text: z.string() })).optional(),
   correctOptionIndex: z.coerce.number().optional(),
   passage: z.string().optional(),
@@ -207,8 +208,6 @@ export function AiBulkUploader({
 export function AddQuestionForm({ exam, initialData, defaultSection, onFinished }: AddQuestionFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [aiInput, setAiInput] = useState("");
-  const [isParsing, setIsParsing] = useState(false);
   const isEditing = !!initialData;
 
   const form = useForm<FormValues>({
@@ -239,12 +238,14 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             explanation: initialData.explanation || "",
             passage: initialData.passage || "",
             questionText: initialData.questionText || "",
+            imageUrl: initialData.imageUrl || "",
         };
     } else {
         // We are creating a new question
         defaultValues = {
             questionType: "Standard",
             questionText: "",
+            imageUrl: "",
             options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
             correctOptionIndex: undefined,
             passage: "",
@@ -274,48 +275,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
     name: "subQuestions",
   });
   
-  const handleParseWithAI = async () => {
-    if (!aiInput) {
-        toast({ variant: "destructive", title: "Input Required", description: "Please paste the text into the AI parser box."});
-        return;
-    }
-    setIsParsing(true);
-    try {
-        const result = await parseQuestionAction(aiInput);
-        if (result.success && result.data) {
-            const { questionText, options, correctOptionIndex, subject, topic, difficulty, explanation, passage, subQuestions } = result.data as any;
-            
-            if (passage && subQuestions) {
-                form.setValue('questionType', 'Reading Comprehension');
-                form.setValue('passage', passage);
-                replaceSubQuestions(subQuestions.map((sq: any) => ({...sq, id: uuidv4() })));
-                if(subject) form.setValue('subject', subject);
-                if(topic) form.setValue('topic', topic);
-                if(difficulty) form.setValue('difficulty', difficulty);
-                if(explanation) form.setValue('explanation', explanation);
-                toast({ title: "Success", description: "AI has filled the RC form fields." });
-            } else {
-                form.setValue('questionType', 'Standard');
-                form.setValue('questionText', questionText || '');
-                replaceOptions(options.map((opt: any) => ({ text: opt.text || '' })));
-                form.setValue('correctOptionIndex', correctOptionIndex);
-                if (subject) form.setValue('subject', subject);
-                if (topic) form.setValue('topic', topic);
-                if (difficulty) form.setValue('difficulty', difficulty);
-                form.setValue('explanation', explanation || '');
-                toast({ title: "Success", description: "AI has filled the standard form fields." });
-            }
-
-        } else {
-             toast({ variant: 'destructive', title: 'Parsing Failed', description: result.error || "Couldn't parse the question." });
-        }
-    } catch (e) {
-        toast({ variant: 'destructive', title: 'Error', description: "An unexpected error occurred." });
-    } finally {
-        setIsParsing(false);
-    }
-  };
-
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
       const result = await addQuestionAction(data);
@@ -385,6 +344,24 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         <FormMessage />
                         </FormItem>
                     )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                            </FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                            </FormControl>
+                             <FormDescription>
+                                Add a URL for a diagram or chart if the question needs it.
+                            </FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
                     />
                     
                     <FormItem>

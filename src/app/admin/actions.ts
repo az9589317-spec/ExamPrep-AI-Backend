@@ -3,6 +3,7 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -141,6 +142,7 @@ const addQuestionSchema = z.object({
   // Fields that depend on questionType
   marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional(),
   questionText: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   options: z.array(z.object({ text: z.string() })).optional(),
   correctOptionIndex: z.coerce.number().optional(),
   passage: z.string().optional(),
@@ -221,6 +223,7 @@ export async function addQuestionAction(data: z.infer<typeof addQuestionSchema>)
              questionPayload = {
                 questionType: 'Standard',
                 questionText: questionData.questionText,
+                imageUrl: questionData.imageUrl || null,
                 options: questionData.options,
                 correctOptionIndex: questionData.correctOptionIndex,
                 subject: questionData.subject,
