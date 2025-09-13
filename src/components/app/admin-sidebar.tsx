@@ -11,17 +11,20 @@ import {
     SidebarTrigger,
   } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { signOut } from '@/services/auth';
+import { useNotifications } from '@/hooks/use-notifications';
+import { Badge } from '../ui/badge';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
     const { user } = useAuth();
+    const { unreadCount } = useNotifications();
     const isActive = (path: string) => pathname === path || (path !== '/admin' && pathname.startsWith(path));
 
     const handleLogout = async () => {
@@ -55,6 +58,21 @@ export default function AdminSidebar() {
                             <SidebarMenuButton isActive={isActive('/admin/users')} tooltip={{children: 'Users'}}>
                                 <Users />
                                 <span>Users</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/notifications">
+                            <SidebarMenuButton isActive={isActive('/admin/notifications')} tooltip={{children: 'Notifications'}}>
+                                <div className="relative">
+                                    <Bell />
+                                    {unreadCount > 0 && (
+                                        <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 justify-center rounded-full p-0 text-xs">
+                                            {unreadCount}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <span>Notifications</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>

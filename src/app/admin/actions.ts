@@ -5,11 +5,12 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, doc, type Timestamp, writeBatch, getDocs, query, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, type Timestamp, writeBatch, getDocs, query, setDoc, deleteDoc, serverTimestamp, where } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { exams as mockExams, questions as mockQuestions } from '@/lib/mock-data';
 import { parseQuestionFromText } from '@/ai/flows/parse-question-from-text';
@@ -593,5 +594,69 @@ export async function updateUserStatusAction({ userId, status }: { userId: strin
     } catch (error) {
         console.error("Error updating user status:", error);
         return { success: false, message: 'Failed to update user status.' };
+    }
+}
+
+const sendNotificationSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters long."),
+  description: z.string().min(10, "Description must be at least 10 characters long."),
+  link: z.string().url().optional().or(z.literal('')),
+});
+
+export async function sendNotificationAction(data: z.infer<typeof sendNotificationSchema>) {
+  const validatedFields = sendNotificationSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Invalid fields provided.',
+    };
+  }
+  
+  try {
+    const notificationsCollection = collection(db, 'notifications');
+    await addDoc(notificationsCollection, {
+      ...validatedFields.data,
+      isRead: false,
+      createdAt: serverTimestamp(),
+      type: 'broadcast',
+    });
+
+    revalidatePath('/admin/notifications');
+
+    return {
+      message: `Notification "${validatedFields.data.title}" sent successfully!`,
+      errors: {},
+    };
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    return {
+      message: 'Failed to send notification. Please try again.',
+      errors: { _form: ['An unexpected error occurred.'] },
+    };
+  }
+}
+
+export async function markNotificationsAsReadAction(notificationIds: string[]) {
+    if (!notificationIds || notificationIds.length === 0) {
+        return { success: false, message: 'No notification IDs provided.' };
+    }
+
+    try {
+        const batch = writeBatch(db);
+        const notificationsCollection = collection(db, 'notifications');
+        
+        notificationIds.forEach(id => {
+            const notificationRef = doc(notificationsCollection, id);
+            batch.update(notificationRef, { isRead: true });
+        });
+        
+        await batch.commit();
+
+        revalidatePath('/admin/notifications');
+        return { success: true, message: 'Notifications marked as read.' };
+    } catch (error) {
+        console.error("Error marking notifications as read:", error);
+        return { success: false, message: 'Failed to update notifications.' };
     }
 }

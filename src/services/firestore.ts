@@ -1,6 +1,7 @@
 
 
 
+
 // src/services/firestore.ts
 'use server';
 
@@ -17,9 +18,10 @@ import {
   Timestamp,
   updateDoc,
   setDoc,
+  limit,
 } from 'firebase/firestore';
 import { allCategories, allSubCategories, subCategories as subCategoryMap } from '@/lib/categories';
-import type { Exam, Question, UserProfile, ExamResult } from '@/lib/data-structures';
+import type { Exam, Question, UserProfile, ExamResult, Notification } from '@/lib/data-structures';
 import { getQuestionsForExam as getQuestions } from './firestore';
 
 const getParentCategory = (subCategory: string): string | undefined => {
@@ -282,4 +284,12 @@ export async function getCategoryPerformanceStats(category: string) {
         highestScore: parseFloat(highestScoreResult.score.toFixed(2)),
         highestScoreExamName: highestScoreResult.examName,
     };
+}
+
+export async function getNotifications(): Promise<Notification[]> {
+  const notificationsCollection = collection(db, 'notifications');
+  const q = query(notificationsCollection, orderBy('createdAt', 'desc'), limit(50));
+  const snapshot = await getDocs(q);
+  const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+  return JSON.parse(JSON.stringify(notifications));
 }

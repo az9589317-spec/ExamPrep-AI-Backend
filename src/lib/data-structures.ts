@@ -189,6 +189,16 @@ export interface AdminRequest {
     createdAt: Timestamp;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: Timestamp;
+  isRead: boolean;
+  link?: string;
+  type: 'broadcast' | 'alert';
+}
+
 /**
  * Re-exporting from categories to provide a single point of import for data structures.
  */
