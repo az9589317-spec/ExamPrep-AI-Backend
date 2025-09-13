@@ -134,6 +134,7 @@ const subQuestionSchema = z.object({
     correctOptionIndex: z.coerce.number({required_error: "You must select a correct answer."}).min(0),
     explanation: z.string().optional(),
     imageUrl: z.string().url().optional().or(z.literal('')),
+    explanationImageUrl: z.string().url().optional().or(z.literal('')),
     marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional().default(1),
 });
 
@@ -143,6 +144,7 @@ const addQuestionSchema = z.object({
   topic: z.string().min(1, "Topic is required."),
   difficulty: z.enum(["easy", "medium", "hard"]),
   explanation: z.string().optional(),
+  explanationImageUrl: z.string().url().optional().or(z.literal('')),
   examId: z.string(),
   questionId: z.string().optional(),
   
@@ -237,6 +239,7 @@ export async function addQuestionAction(data: z.infer<typeof addQuestionSchema>)
                 topic: questionData.topic,
                 difficulty: questionData.difficulty,
                 explanation: questionData.explanation,
+                explanationImageUrl: questionData.explanationImageUrl || null,
                 marks: questionData.marks,
             };
         } else if (questionData.questionType === 'Reading Comprehension') {
@@ -245,11 +248,12 @@ export async function addQuestionAction(data: z.infer<typeof addQuestionSchema>)
                 questionType: 'Reading Comprehension',
                 passage: questionData.passage,
                 imageUrl: questionData.imageUrl || null,
-                subQuestions: (questionData.subQuestions || []).map(sq => ({ ...sq, imageUrl: sq.imageUrl || null })),
+                subQuestions: (questionData.subQuestions || []).map(sq => ({ ...sq, imageUrl: sq.imageUrl || null, explanationImageUrl: sq.explanationImageUrl || null })),
                 subject: questionData.subject,
                 topic: questionData.topic,
                 difficulty: questionData.difficulty,
                 explanation: questionData.explanation,
+                explanationImageUrl: questionData.explanationImageUrl || null,
                 marks: totalMarks,
             };
         } else {
@@ -697,5 +701,3 @@ export async function deleteNotificationAction({ notificationId }: { notificatio
         return { success: false, message: 'Failed to delete notification.' };
     }
 }
-    
-    

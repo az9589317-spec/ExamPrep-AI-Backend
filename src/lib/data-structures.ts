@@ -91,6 +91,7 @@ export interface SubQuestion {
     correctOptionIndex: number;
     explanation?: string;
     imageUrl?: string;
+    explanationImageUrl?: string;
     marks?: number; // Marks for this specific sub-question.
 }
 
@@ -106,6 +107,7 @@ export interface Question {
   topic: string; // The specific topic of the question (e.g., "Time and Work").
   difficulty: 'easy' | 'medium' | 'hard';
   explanation?: string; // Detailed explanation for the correct answer.
+  explanationImageUrl?: string;
   examId: string; // The ID of the exam this question belongs to.
   marks: number; // The total marks for this question object. For RC, this is the sum of sub-question marks.
   
@@ -208,5 +210,3 @@ export interface SubCategory {
     name: string;
     icon?: React.ReactNode;
 }
-
-    

@@ -38,6 +38,7 @@ const subQuestionSchema = z.object({
     correctOptionIndex: z.coerce.number({required_error: "You must select a correct answer."}).min(0),
     explanation: z.string().optional(),
     imageUrl: z.string().url().optional().or(z.literal('')),
+    explanationImageUrl: z.string().url().optional().or(z.literal('')),
     marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional().default(1),
 });
 
@@ -47,6 +48,7 @@ const addQuestionSchema = z.object({
   topic: z.string().min(1, "Topic is required."),
   difficulty: z.enum(["easy", "medium", "hard"]),
   explanation: z.string().optional(),
+  explanationImageUrl: z.string().url().optional().or(z.literal('')),
   examId: z.string(),
   questionId: z.string().optional(),
   
@@ -298,10 +300,12 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                 options: sq.options?.map(opt => ({ text: opt.text || '' })) || [{ text: "" }, { text: "" }],
                 marks: sq.marks || 1,
                 imageUrl: sq.imageUrl || '',
+                explanationImageUrl: sq.explanationImageUrl || '',
             })) || [],
             topic: initialData.topic || "",
             difficulty: initialData.difficulty || "medium",
             explanation: initialData.explanation || "",
+            explanationImageUrl: initialData.explanationImageUrl || "",
             passage: initialData.passage || "",
             questionText: initialData.questionText || "",
             imageUrl: initialData.imageUrl || "",
@@ -320,6 +324,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             topic: "",
             difficulty: "medium",
             explanation: "",
+            explanationImageUrl: "",
             marks: 1,
             examId: exam.id,
             questionId: undefined,
@@ -601,7 +606,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                         />
                                         <FormField
                                             control={form.control}
-                                            name={`subQuestions.${index}.imageUrl`}
+                                            name={`subQuestions.${index}.explanationImageUrl`}
                                             render={({ field }) => (
                                                 <>
                                                 <FormControl className="mt-2">
@@ -614,7 +619,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                             )}
                                         />
                                         <FormMessage>{form.formState.errors.subQuestions?.[index]?.explanation?.message}</FormMessage>
-                                        <FormMessage>{form.formState.errors.subQuestions?.[index]?.imageUrl?.message}</FormMessage>
+                                        <FormMessage>{form.formState.errors.subQuestions?.[index]?.explanationImageUrl?.message}</FormMessage>
                                     </FormItem>
                                 </div>
                             </Card>
@@ -624,7 +629,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                             variant="outline"
                             size="sm"
                             className="mt-2"
-                            onClick={() => appendSubQuestion({ id: uuidv4(), questionText: "", options: [{text: ""}, {text: ""}, {text: ""}, {text: ""}], correctOptionIndex: 0, explanation: "", marks: 1, imageUrl: "" })}
+                            onClick={() => appendSubQuestion({ id: uuidv4(), questionText: "", options: [{text: ""}, {text: ""}, {text: ""}, {text: ""}], correctOptionIndex: 0, explanation: "", marks: 1, imageUrl: "", explanationImageUrl: "" })}
                             >
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Sub-Question
@@ -728,6 +733,22 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="explanationImageUrl"
+                    render={({ field }) => (
+                        <FormItem className="md:col-span-4">
+                            <FormLabel>Image URL for Explanation (Optional)</FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com/explanation_image.png" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>
+                                Add a URL for an image to be displayed with the explanation.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </CardContent>
         </Card>
 
@@ -811,5 +832,3 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
-
-    
