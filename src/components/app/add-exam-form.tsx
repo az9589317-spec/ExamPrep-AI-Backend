@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
@@ -252,10 +253,6 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
           delete (dataToSave as any).year;
       }
       
-      if (data.examType !== 'Mock Test') {
-        delete dataToSave.mockType;
-      }
-
       delete (dataToSave as any).subCategories;
 
       const result = await addExamAction(dataToSave as any);
@@ -387,25 +384,23 @@ export function AddExamForm({ initialData, defaultCategory, onFinished }: { init
                         </FormItem>
                         )}
                     />
-                    {selectedExamType === 'Mock Test' && (
-                        <FormField
-                            control={form.control}
-                            name="mockType"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Mock Test Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select mock type" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Full">Full Mock</SelectItem>
-                                    <SelectItem value="Sectional">Sectional Mock</SelectItem>
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    )}
+                    <FormField
+                        control={form.control}
+                        name="mockType"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Test Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select test type" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Full">Full Mock</SelectItem>
+                                <SelectItem value="Sectional">Sectional Mock</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                  </div>
                  <FormField
                     control={form.control}
