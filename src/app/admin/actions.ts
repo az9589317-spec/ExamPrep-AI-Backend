@@ -9,6 +9,7 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -132,6 +133,7 @@ const subQuestionSchema = z.object({
     options: z.array(z.object({ text: z.string().min(1, "Option text cannot be empty.") })).min(2, "At least two options are required."),
     correctOptionIndex: z.coerce.number({required_error: "You must select a correct answer."}).min(0),
     explanation: z.string().optional(),
+    imageUrl: z.string().url().optional().or(z.literal('')),
     marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional().default(1),
 });
 
@@ -243,7 +245,7 @@ export async function addQuestionAction(data: z.infer<typeof addQuestionSchema>)
                 questionType: 'Reading Comprehension',
                 passage: questionData.passage,
                 imageUrl: questionData.imageUrl || null,
-                subQuestions: questionData.subQuestions,
+                subQuestions: (questionData.subQuestions || []).map(sq => ({ ...sq, imageUrl: sq.imageUrl || null })),
                 subject: questionData.subject,
                 topic: questionData.topic,
                 difficulty: questionData.difficulty,
@@ -695,4 +697,5 @@ export async function deleteNotificationAction({ notificationId }: { notificatio
         return { success: false, message: 'Failed to delete notification.' };
     }
 }
+    
     

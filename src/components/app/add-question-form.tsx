@@ -37,6 +37,7 @@ const subQuestionSchema = z.object({
     options: z.array(z.object({ text: z.string().min(1, "Option text cannot be empty.") })).min(2, "At least two options are required."),
     correctOptionIndex: z.coerce.number({required_error: "You must select a correct answer."}).min(0),
     explanation: z.string().optional(),
+    imageUrl: z.string().url().optional().or(z.literal('')),
     marks: z.coerce.number().min(0.25, "Marks must be at least 0.25.").optional().default(1),
 });
 
@@ -296,6 +297,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                 ...sq,
                 options: sq.options?.map(opt => ({ text: opt.text || '' })) || [{ text: "" }, { text: "" }],
                 marks: sq.marks || 1,
+                imageUrl: sq.imageUrl || '',
             })) || [],
             topic: initialData.topic || "",
             difficulty: initialData.difficulty || "medium",
@@ -600,6 +602,24 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                             </FormItem>
                                         )}
                                     />
+                                    <FormField
+                                        control={form.control}
+                                        name={`subQuestions.${index}.imageUrl`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="flex items-center gap-2">
+                                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Add a URL for an image to be displayed with the sub-question explanation.
+                                            </FormDescription>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                             </Card>
                         ))}
@@ -608,7 +628,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                             variant="outline"
                             size="sm"
                             className="mt-2"
-                            onClick={() => appendSubQuestion({ id: uuidv4(), questionText: "", options: [{text: ""}, {text: ""}, {text: ""}, {text: ""}], correctOptionIndex: 0, explanation: "", marks: 1 })}
+                            onClick={() => appendSubQuestion({ id: uuidv4(), questionText: "", options: [{text: ""}, {text: ""}, {text: ""}, {text: ""}], correctOptionIndex: 0, explanation: "", marks: 1, imageUrl: "" })}
                             >
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Sub-Question
@@ -706,7 +726,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                             <Textarea placeholder="Provide a detailed solution or explanation." {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
-                            Add an image URL to the explanation above.
+                            This explanation applies to the entire question (e.g. overall context for RC).
                         </FormDescription>
                         <FormMessage />
                         </FormItem>

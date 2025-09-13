@@ -90,6 +90,7 @@ export interface SubQuestion {
     options: QuestionOption[];
     correctOptionIndex: number;
     explanation?: string;
+    imageUrl?: string;
     marks?: number; // Marks for this specific sub-question.
 }
 
