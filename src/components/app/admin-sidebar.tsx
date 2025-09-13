@@ -11,7 +11,7 @@ import {
     SidebarTrigger,
   } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell, Trophy } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -58,6 +58,14 @@ export default function AdminSidebar() {
                             <SidebarMenuButton isActive={isActive('/admin/users')} tooltip={{children: 'Users'}}>
                                 <Users />
                                 <span>Users</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <Link href="/admin/leaderboard">
+                            <SidebarMenuButton isActive={isActive('/admin/leaderboard')} tooltip={{children: 'Leaderboard'}}>
+                                <Trophy />
+                                <span>Leaderboard</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
