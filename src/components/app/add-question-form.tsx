@@ -530,6 +530,25 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         )}
                     />
                     
+                    <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                    <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                                </FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                                </FormControl>
+                                <FormDescription>
+                                    Add a URL for an image to accompany the passage.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
                     <Separator />
                     
                     <div className="space-y-4">
