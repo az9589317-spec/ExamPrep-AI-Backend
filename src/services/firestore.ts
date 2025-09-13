@@ -294,69 +294,84 @@ export type LeaderboardEntry = {
     rank: number;
     user: UserProfile;
     highestScore: number;
-    highestScorePercent: number;
     examsTaken: number;
 };
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const [resultsSnapshot, usersSnapshot] = await Promise.all([
+    const [resultsSnapshot, usersSnapshot, examsSnapshot] = await Promise.all([
         getDocs(collection(db, 'results')),
         getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'exams')),
     ]);
 
-    const allResults = resultsSnapshot.docs.map(doc => doc.data() as ExamResult);
     const allUsers = usersSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data() as { displayName: string, email: string, photoURL: string, status: 'active' | 'suspended', role: 'user' | 'admin' };
+        const data = doc.data();
+        acc[doc.id] = { 
+            id: doc.id,
+            name: data.displayName,
+            email: data.email,
+            photoURL: data.photoURL,
+            status: data.status || 'active',
+            role: data.role || 'user',
+            registrationDate: '',
+        };
         return acc;
-    }, {} as Record<string, { displayName: string, email: string, photoURL: string, status: 'active' | 'suspended', role: 'user' | 'admin' }>);
-    
+    }, {} as Record<string, UserProfile>);
 
-    const userScores = allResults.reduce((acc, result) => {
-        if (!result.userId || result.isDisqualified) return acc;
-        
-        const existing = acc[result.userId] || { highestScore: 0, examsTaken: 0, maxScore: 0 };
-        
-        const scorePercent = (result.score / result.maxScore) * 100;
+    const allExams = examsSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data() as Exam;
+        return acc;
+    }, {} as Record<string, Exam>);
 
-        if (scorePercent > existing.highestScore) {
-            existing.highestScore = scorePercent;
+    const userStats = allResults.docs.reduce((acc, resultDoc) => {
+        const result = resultDoc.data() as ExamResult;
+        if (!result.userId || result.isDisqualified || !allUsers[result.userId]) {
+            return acc;
+        }
+        
+        const exam = allExams[result.examId];
+        let score = result.score; // Use the stored score if available
+
+        if (exam) {
+            // If exam data is available, recalculate score based on (Correct * Marks) - (Wrong * Penalty)
+            // This assumes a simple marks system; a real app would need to be more robust.
+            // A more robust system would calculate this on result submission and store it.
+            const marksPerQuestion = exam.totalMarks / exam.totalQuestions || 1;
+            const negativeMarkValue = exam.sections[0]?.negativeMarkValue ?? 0;
+            score = (result.correctAnswers * marksPerQuestion) - (result.incorrectAnswers * negativeMarkValue);
         }
 
+        const existing = acc[result.userId] || { totalPoints: 0, examsTaken: 0, highestScore: 0 };
+        
+        existing.totalPoints += score;
         existing.examsTaken += 1;
+        
+        const currentPercentage = (result.score / result.maxScore) * 100;
+        if (currentPercentage > existing.highestScore) {
+            existing.highestScore = currentPercentage;
+        }
+
         acc[result.userId] = existing;
 
         return acc;
-    }, {} as Record<string, { highestScore: number, examsTaken: number, maxScore: number }>);
+    }, {} as Record<string, { totalPoints: number; examsTaken: number; highestScore: number }>);
     
-    let leaderboard = Object.keys(userScores)
-        .map(userId => {
-            const userData = allUsers[userId];
-            if (!userData) return null;
 
-            return {
-                user: {
-                    id: userId,
-                    name: userData.displayName,
-                    email: userData.email,
-                    photoURL: userData.photoURL,
-                    status: userData.status,
-                    role: userData.role,
-                    registrationDate: '',
-                },
-                highestScorePercent: userScores[userId].highestScore,
-                examsTaken: userScores[userId].examsTaken,
-            };
-        })
-        .filter(Boolean) as (Omit<LeaderboardEntry, 'rank' | 'highestScore'> & { highestScorePercent: number })[];
-        
+    const leaderboard = Object.keys(userStats)
+        .map(userId => ({
+            user: allUsers[userId],
+            totalPoints: userStats[userId].totalPoints,
+            examsTaken: userStats[userId].examsTaken,
+            highestScore: userStats[userId].highestScore, // Use this for display, but rank by totalPoints
+        }))
+        .filter(entry => entry.user); // Filter out entries where user data might be missing
 
-    leaderboard.sort((a, b) => b.highestScorePercent - a.highestScorePercent);
+    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
 
-    const rankedLeaderboard = leaderboard.map((entry, index) => ({
-        ...entry,
+    return JSON.parse(JSON.stringify(leaderboard.map((entry, index) => ({
         rank: index + 1,
-        highestScore: parseFloat(entry.highestScorePercent.toFixed(2)),
-    }));
-
-    return JSON.parse(JSON.stringify(rankedLeaderboard));
+        user: entry.user,
+        highestScore: parseFloat(entry.totalPoints.toFixed(2)), // Display total points as the main score
+        examsTaken: entry.examsTaken,
+    }))));
 }
