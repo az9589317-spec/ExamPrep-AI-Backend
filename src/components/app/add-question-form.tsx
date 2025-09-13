@@ -367,29 +367,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
             )}
         />
         
-        <Card className="bg-muted/30">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> AI Parser</CardTitle>
-                <FormDescription>
-                   {questionType === 'Reading Comprehension' ? 
-                   "Paste a full reading passage. The AI will extract the passage and generate sub-questions automatically." : 
-                   "Paste a single question with its options and answer. The AI will fill out the fields below."}
-                </FormDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                 <Textarea 
-                    placeholder={questionType === 'Reading Comprehension' ? "Paste your passage here..." : "Paste your question here..."}
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    className="bg-background"
-                />
-                <Button type="button" size="sm" onClick={handleParseWithAI} disabled={isParsing}>
-                    {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    {isParsing ? 'Parsing...' : `Generate ${questionType === 'Reading Comprehension' ? 'RC' : 'Standard'} Question`}
-                </Button>
-            </CardContent>
-        </Card>
-
         {questionType === 'Standard' && (
             <Card>
                 <CardHeader>
