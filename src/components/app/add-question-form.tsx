@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm, useFieldArray, useWatch, useFormContext } from "react-hook-form";
@@ -426,6 +425,25 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                     )}
                     />
                     
+                    <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                            </FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>
+                                Add a URL for an image to be displayed with the question.
+                            </FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
                     <FormItem>
                     <div className="mb-4">
                         <FormLabel>Options and Correct Answer</FormLabel>
@@ -571,7 +589,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
         
         <Card>
             <CardHeader>
-                <CardTitle>Categorization & Details</CardTitle>
+                <CardTitle>Categorization &amp; Details</CardTitle>
             </CardHeader>
              <CardContent className="grid grid-cols-1 gap-8 md:grid-cols-4">
                  <FormField
@@ -761,3 +779,5 @@ function SubQuestionOptions({ subQuestionIndex }: { subQuestionIndex: number }) 
         </div>
     );
 }
+
+    
