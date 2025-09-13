@@ -414,17 +414,17 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField
-                    control={form.control}
-                    name="questionText"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Question Text</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="Enter the question..." {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                        control={form.control}
+                        name="questionText"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Question Text</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Enter the question..." {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
                     />
                     
                     <FormField
@@ -531,7 +531,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="imageUrl"
@@ -589,37 +588,34 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                         )}
                                     />
                                     <SubQuestionOptions subQuestionIndex={index} />
-                                    <FormField
-                                        control={form.control}
-                                        name={`subQuestions.${index}.explanation`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Detailed Explanation</FormLabel>
+                                    <FormItem>
+                                        <FormLabel>Detailed Explanation</FormLabel>
+                                        <FormField
+                                            control={form.control}
+                                            name={`subQuestions.${index}.explanation`}
+                                            render={({ field }) => (
                                                 <FormControl>
                                                     <Textarea placeholder="Provide a detailed explanation for this sub-question..." {...field} value={field.value || ''} />
                                                 </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name={`subQuestions.${index}.imageUrl`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Add a URL for an image to be displayed with the sub-question explanation.
-                                            </FormDescription>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`subQuestions.${index}.imageUrl`}
+                                            render={({ field }) => (
+                                                <>
+                                                <FormControl className="mt-2">
+                                                    <Input placeholder="Image URL for explanation (optional)" {...field} value={field.value || ''} />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    Add a URL for an image to be displayed with the sub-question explanation.
+                                                </FormDescription>
+                                                </>
+                                            )}
+                                        />
+                                        <FormMessage>{form.formState.errors.subQuestions?.[index]?.explanation?.message}</FormMessage>
+                                        <FormMessage>{form.formState.errors.subQuestions?.[index]?.imageUrl?.message}</FormMessage>
+                                    </FormItem>
                                 </div>
                             </Card>
                         ))}
@@ -726,7 +722,7 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                             <Textarea placeholder="Provide a detailed solution or explanation." {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>
-                            This explanation applies to the entire question (e.g. overall context for RC).
+                            This explanation applies to the entire question (e.g. overall context for RC). For sub-questions, add explanations within each sub-question card.
                         </FormDescription>
                         <FormMessage />
                         </FormItem>
