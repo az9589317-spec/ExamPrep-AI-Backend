@@ -11,7 +11,7 @@ import {
     SidebarTrigger,
   } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell, Trophy, User } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreVertical, Bell, Trophy, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -101,7 +101,7 @@ export default function AdminSidebar() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
+                                    <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent side="top" align="end" className="w-48">
