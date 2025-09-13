@@ -11,12 +11,12 @@ import {
     SidebarTrigger,
   } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell, Trophy } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, Users, LogOut, MoreHorizontal, Bell, Trophy, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { signOut } from '@/services/auth';
 import { useNotifications } from '@/hooks/use-notifications';
 import { Badge } from '../ui/badge';
@@ -105,6 +105,19 @@ export default function AdminSidebar() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent side="top" align="end" className="w-48">
+                                <DropdownMenuItem asChild>
+                                    <Link href="/leaderboard">
+                                        <Trophy className="mr-2 h-4 w-4" />
+                                        <span>Leaderboard</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                 <DropdownMenuItem asChild>
+                                    <Link href="/profile">
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Profile</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout}>
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Log out</span>
