@@ -196,6 +196,7 @@ export interface Notification {
   createdAt: Timestamp;
   isRead: boolean;
   link?: string;
+  imageUrl?: string;
   type: 'broadcast' | 'alert';
 }
 
@@ -206,3 +207,5 @@ export interface SubCategory {
     name: string;
     icon?: React.ReactNode;
 }
+
+    

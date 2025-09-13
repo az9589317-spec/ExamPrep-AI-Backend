@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -6,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useTransition } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Bell, Check, Loader2, Send, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ const sendNotificationSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   description: z.string().min(10, "Description must be at least 10 characters long."),
   link: z.string().url().optional().or(z.literal('')),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 function SendNotificationForm() {
@@ -34,6 +37,7 @@ function SendNotificationForm() {
       title: '',
       description: '',
       link: '',
+      imageUrl: '',
     },
   });
 
@@ -82,6 +86,20 @@ function SendNotificationForm() {
                   <FormControl>
                     <Textarea placeholder="Describe the notification in detail..." {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com/image.png" {...field} />
+                  </FormControl>
+                  <FormDescription>An image to display with the notification.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -162,6 +180,17 @@ function NotificationList() {
                 <div className="flex-1 space-y-1">
                   <p className="font-medium">{notification.title}</p>
                   <p className="text-sm text-muted-foreground">{notification.description}</p>
+                  {notification.imageUrl && (
+                    <div className="mt-2">
+                        <Image
+                            src={notification.imageUrl}
+                            alt={notification.title}
+                            width={400}
+                            height={200}
+                            className="rounded-md object-cover"
+                        />
+                    </div>
+                  )}
                   {notification.link && <Link href={notification.link} className="text-sm text-blue-500 hover:underline">View Details</Link>}
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date((notification.createdAt as any).seconds * 1000), { addSuffix: true })}
@@ -193,3 +222,5 @@ export default function NotificationsPage() {
     </div>
   );
 }
+
+    
