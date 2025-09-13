@@ -1,5 +1,6 @@
 
 
+
 // src/services/firestore.ts
 'use server';
 
@@ -34,7 +35,13 @@ export async function getExams(category?: string): Promise<Exam[]> {
   const examsCollection = collection(db, 'exams');
   let q;
   if (category) {
-      q = query(examsCollection, where('category', 'array-contains', category));
+      // Check if the provided category is a main category or a sub-category
+      const isMainCategory = allCategories.some(c => c.name === category);
+      if (isMainCategory) {
+          q = query(examsCollection, where('category', '==', category));
+      } else {
+          q = query(examsCollection, where('subCategory', 'array-contains', category));
+      }
   } else {
       q = query(examsCollection, orderBy('name', 'asc'));
   }
@@ -54,7 +61,12 @@ export async function getPublishedExams(category?: string): Promise<Exam[]> {
     const conditions = [where('status', '==', 'published')];
 
     if (category) {
-      conditions.push(where('category', 'array-contains', category));
+      const isMainCategory = allCategories.some(c => c.name === category);
+      if (isMainCategory) {
+          conditions.push(where('category', '==', category));
+      } else {
+          conditions.push(where('subCategory', 'array-contains', category));
+      }
     }
     
     q = query(examsCollection, ...conditions);
@@ -94,16 +106,16 @@ export async function getExamCategories() {
     const exams = snapshot.docs.map(doc => doc.data() as Exam);
 
     const examCountByCategory = exams.reduce((acc, exam) => {
-        const categories = Array.isArray(exam.category) ? exam.category : [exam.category];
-        categories.forEach(category => {
-            acc[category] = (acc[category] || 0) + 1;
-            
-            const parentCategory = getParentCategory(category);
-            if (parentCategory) {
-                acc[parentCategory] = (acc[parentCategory] || 0) + 1;
-            }
-        });
-
+        // Count for main category
+        if (exam.category) {
+            acc[exam.category] = (acc[exam.category] || 0) + 1;
+        }
+        // Count for sub-categories
+        if (exam.subCategory && Array.isArray(exam.subCategory)) {
+            exam.subCategory.forEach(sc => {
+                acc[sc] = (acc[sc] || 0) + 1;
+            });
+        }
         return acc;
     }, {} as Record<string, number>);
     
@@ -158,6 +170,7 @@ export async function getUsers(): Promise<UserProfile[]> {
             photoURL: data.photoURL,
             registrationDate: new Date(data.createdAt).toLocaleDateString(),
             status: data.status || 'active', // Default to 'active' if status is not set
+            role: data.role || 'user',
         }
     });
     return JSON.parse(JSON.stringify(users));
@@ -176,6 +189,7 @@ export async function getUser(userId: string): Promise<UserProfile | null> {
         photoURL: data.photoURL,
         registrationDate: new Date(data.createdAt).toLocaleDateString(),
         status: data.status || 'active', // Default to 'active' if status is not set
+        role: data.role || 'user',
     };
     return JSON.parse(JSON.stringify(userProfile));
 }

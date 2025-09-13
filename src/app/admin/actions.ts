@@ -2,6 +2,7 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -31,10 +32,10 @@ const sectionSchema = z.object({
 const addExamSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Exam name is required and must be at least 3 characters.'),
-  category: z.union([z.string(), z.array(z.string())]).refine(val => (Array.isArray(val) && val.length > 0) || (typeof val === 'string' && val.length > 0), { message: 'A category is required.'}),
+  category: z.string().min(1, 'A main category is required.'),
+  subCategory: z.array(z.string()).optional(),
   year: z.coerce.number().optional(),
-  examType: z.enum(['Prelims', 'Mains', 'Mock Test', 'Practice', 'Custom']),
-  mockType: z.enum(['Full', 'Sectional']).optional(),
+  examType: z.enum(['Full Mock', 'Sectional Mock', 'Practice', 'Custom']),
   status: z.enum(['published', 'draft', 'archived']),
   sections: z.array(sectionSchema).min(1, "An exam must have at least one section."),
   durationMin: z.coerce.number().min(1, "Total duration must be at least 1 minute."),
@@ -102,9 +103,7 @@ export async function addExamAction(data: z.infer<typeof addExamSchema>) {
     }
     
     revalidatePath('/admin');
-    if (Array.isArray(data.category) && data.category.length > 0) {
-        revalidatePath(`/admin/category/${data.category[0]}`);
-    } else if (typeof data.category === 'string') {
+    if (data.category) {
         revalidatePath(`/admin/category/${data.category}`);
     }
 
@@ -394,7 +393,7 @@ export async function seedDatabaseAction() {
 
             const examPayload: any = {
                 ...mockExam,
-                category: [mockExam.category], // Convert to array
+                subCategory: [],
                 sections: [
                     { id: 's1', name: 'Quantitative Aptitude', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
                     { id: 's2', name: 'Reasoning Ability', timeLimit: 30, negativeMarking: true, negativeMarkValue: 0.25, allowQuestionNavigation: true, randomizeQuestions: false, showCalculator: false },
@@ -406,7 +405,7 @@ export async function seedDatabaseAction() {
                 startTime: null,
                 endTime: null,
                 createdAt: new Date(),
-                examType: 'Mock Test',
+                examType: 'Full Mock',
                 hasOverallTimer: true,
                 hasSectionTimer: true,
                 allowBackNavigation: true,
