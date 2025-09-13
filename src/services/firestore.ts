@@ -306,9 +306,9 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 
     const allResults = resultsSnapshot.docs.map(doc => doc.data() as ExamResult);
     const allUsers = usersSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data() as Omit<UserProfile, 'id' | 'registrationDate'>;
+        acc[doc.id] = doc.data() as { displayName: string, email: string, photoURL: string, status: 'active' | 'suspended', role: 'user' | 'admin' };
         return acc;
-    }, {} as Record<string, Omit<UserProfile, 'id' | 'registrationDate'>>);
+    }, {} as Record<string, { displayName: string, email: string, photoURL: string, status: 'active' | 'suspended', role: 'user' | 'admin' }>);
     
 
     const userScores = allResults.reduce((acc, result) => {
@@ -336,7 +336,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
             return {
                 user: {
                     id: userId,
-                    name: userData.name,
+                    name: userData.displayName,
                     email: userData.email,
                     photoURL: userData.photoURL,
                     status: userData.status,
