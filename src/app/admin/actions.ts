@@ -4,6 +4,7 @@
 
 
 
+
 'use server';
 
 import { z } from 'zod';
@@ -237,6 +238,7 @@ export async function addQuestionAction(data: z.infer<typeof addQuestionSchema>)
             questionPayload = {
                 questionType: 'Reading Comprehension',
                 passage: questionData.passage,
+                imageUrl: questionData.imageUrl || null,
                 subQuestions: questionData.subQuestions,
                 subject: questionData.subject,
                 topic: questionData.topic,
@@ -470,6 +472,10 @@ export async function parseQuestionAction(text: string) {
         const validatedData = {
             ...parsedData,
             options: parsedData.options?.map(opt => ({ text: opt.text || '' })) || [],
+            subQuestions: parsedData.subQuestions?.map(sq => ({
+                ...sq,
+                options: sq.options?.map(opt => ({ text: opt.text || '' })) || [],
+            })),
         };
         return { success: true, data: validatedData };
     } catch (error) {

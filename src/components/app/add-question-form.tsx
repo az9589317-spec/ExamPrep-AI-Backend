@@ -124,6 +124,71 @@ interface AddQuestionFormProps {
     onFinished: () => void;
 }
 
+function AiPassageParser({ onParse }: { onParse: (data: any) => void }) {
+    const { toast } = useToast();
+    const [isParsing, setIsParsing] = useState(false);
+    const [aiInput, setAiInput] = useState("");
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleParseWithAI = async () => {
+        if (!aiInput) {
+            toast({ variant: "destructive", title: "Input Required", description: "Please paste the passage text." });
+            return;
+        }
+        setIsParsing(true);
+        try {
+            const result = await parseQuestionAction(aiInput);
+            if (result.success && result.data) {
+                onParse(result.data);
+                toast({ title: "Success!", description: "AI has populated the form with the parsed passage and questions." });
+                setIsDialogOpen(false);
+                setAiInput("");
+            } else {
+                toast({ variant: 'destructive', title: 'Parsing Failed', description: result.error || "The AI could not parse the passage." });
+            }
+        } catch(e) {
+            toast({ variant: 'destructive', title: 'Error', description: "An unexpected error occurred during parsing." });
+        }
+        finally {
+            setIsParsing(false);
+        }
+    };
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Fill with AI
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Generate RC Questions with AI</DialogTitle>
+                    <DialogDescription>
+                        Paste a passage below. The AI will analyze it and generate relevant sub-questions, options, and answers for you.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                     <Textarea
+                        placeholder="Paste the entire reading comprehension passage here..."
+                        value={aiInput}
+                        onChange={(e) => setAiInput(e.target.value)}
+                        className="h-64"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button type="button" onClick={handleParseWithAI} disabled={isParsing}>
+                        {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        {isParsing ? 'Analyzing Passage...' : 'Generate Questions'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export function AiBulkUploader({
     examId,
     sectionName,
@@ -274,6 +339,21 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
     control: form.control,
     name: "subQuestions",
   });
+
+  const handleAiParse = (parsedData: any) => {
+    if (parsedData.passage) {
+      form.setValue('passage', parsedData.passage);
+    }
+    if (parsedData.subQuestions && parsedData.subQuestions.length > 0) {
+      replaceSubQuestions(parsedData.subQuestions);
+    }
+    if (parsedData.topic) {
+        form.setValue('topic', parsedData.topic);
+    }
+    if (parsedData.difficulty) {
+        form.setValue('difficulty', parsedData.difficulty);
+    }
+  };
   
   const onSubmit = (data: FormValues) => {
     startTransition(async () => {
@@ -431,8 +511,9 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
 
         {questionType === 'Reading Comprehension' && (
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Reading Comprehension Details</CardTitle>
+                    <AiPassageParser onParse={handleAiParse} />
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField
@@ -511,6 +592,28 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                 <CardTitle>Categorization & Details</CardTitle>
             </CardHeader>
              <CardContent className="grid grid-cols-1 gap-8 md:grid-cols-4">
+                 <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                        <FormLabel>Section (Subject)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {exam.sections.map(section => (
+                                <SelectItem key={section.id} value={section.name}>{section.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="topic"
