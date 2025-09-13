@@ -323,7 +323,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
         return acc;
     }, {} as Record<string, Exam>);
 
-    const userStats = allResults.docs.reduce((acc, resultDoc) => {
+    const userStats = resultsSnapshot.docs.reduce((acc, resultDoc) => {
         const result = resultDoc.data() as ExamResult;
         if (!result.userId || result.isDisqualified || !allUsers[result.userId]) {
             return acc;
