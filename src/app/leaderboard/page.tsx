@@ -28,12 +28,12 @@ function TopThree({ top3 }: { top3: LeaderboardEntry[] }) {
                     <CardHeader className="text-center">
                         <div className="relative w-24 h-24 mx-auto">
                             <Avatar className="w-24 h-24 border-4 border-background ring-2 ring-offset-background ring-primary">
-                                <AvatarImage src={entry.user.photoURL} alt={entry.user.name} data-ai-hint="person avatar"/>
-                                <AvatarFallback>{entry.user.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={entry.user.photoURL} alt={entry.user.name || 'User'} data-ai-hint="person avatar"/>
+                                <AvatarFallback>{entry.user.name ? entry.user.name.charAt(0) : 'U'}</AvatarFallback>
                             </Avatar>
                             <Medal className={`absolute -top-2 -right-2 h-8 w-8 ${medalColors[index]}`} />
                         </div>
-                        <CardTitle className="mt-4 text-2xl font-bold">{entry.user.name}</CardTitle>
+                        <CardTitle className="mt-4 text-2xl font-bold">{entry.user.name || 'Anonymous User'}</CardTitle>
                         <CardDescription>Rank #{entry.rank}</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
@@ -89,11 +89,11 @@ export default async function LeaderboardPage() {
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-10 w-10">
-                                                        <AvatarImage src={entry.user.photoURL} alt={entry.user.name} data-ai-hint="person avatar"/>
-                                                        <AvatarFallback>{entry.user.name.charAt(0)}</AvatarFallback>
+                                                        <AvatarImage src={entry.user.photoURL} alt={entry.user.name || 'User'} data-ai-hint="person avatar"/>
+                                                        <AvatarFallback>{entry.user.name ? entry.user.name.charAt(0) : 'U'}</AvatarFallback>
                                                     </Avatar>
                                                     <div>
-                                                        <p className="font-semibold">{entry.user.name}</p>
+                                                        <p className="font-semibold">{entry.user.name || 'Anonymous User'}</p>
                                                         <p className="text-xs text-muted-foreground">{entry.user.email}</p>
                                                     </div>
                                                 </div>
