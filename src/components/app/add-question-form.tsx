@@ -530,6 +530,25 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         )}
                     />
 
+                    <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" /> Image URL (Optional)
+                            </FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>
+                                Add a URL for an image to be displayed with the passage.
+                            </FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
                     <Separator />
                     
                     <div className="space-y-4">
@@ -674,24 +693,6 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                         <FormControl>
                             <Textarea placeholder="Provide a detailed solution or explanation." {...field} value={field.value || ''} />
                         </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                        <FormItem className="md:col-span-4">
-                        <FormLabel className="flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" /> Image URL (Optional)
-                        </FormLabel>
-                        <FormControl>
-                            <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} />
-                        </FormControl>
-                            <FormDescription>
-                            Add a URL for a diagram or chart if the explanation needs it.
-                        </FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
