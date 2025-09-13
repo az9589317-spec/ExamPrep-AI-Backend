@@ -587,6 +587,19 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                                         )}
                                     />
                                     <SubQuestionOptions subQuestionIndex={index} />
+                                    <FormField
+                                        control={form.control}
+                                        name={`subQuestions.${index}.explanation`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Detailed Explanation</FormLabel>
+                                                <FormControl>
+                                                    <Textarea placeholder="Provide a detailed explanation for this sub-question..." {...field} value={field.value || ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                             </Card>
                         ))}
@@ -689,10 +702,12 @@ export function AddQuestionForm({ exam, initialData, defaultSection, onFinished 
                     render={({ field }) => (
                         <FormItem className="md:col-span-4">
                         <FormLabel>Overall Explanation (Optional)</FormLabel>
-                        <FormDescription>A detailed solution or explanation for the entire question (e.g., passage summary or context).</FormDescription>
                         <FormControl>
                             <Textarea placeholder="Provide a detailed solution or explanation." {...field} value={field.value || ''} />
                         </FormControl>
+                        <FormDescription>
+                            Add an image URL to the explanation above.
+                        </FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}
